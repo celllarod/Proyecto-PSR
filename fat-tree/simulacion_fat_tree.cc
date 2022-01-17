@@ -1,0 +1,506 @@
+#include "ns3/node-container.h"
+#include "ns3/node.h"
+#include "ns3/internet-stack-helper.h"
+#include "ns3/nstime.h"
+#include "ns3/net-device-container.h"
+#include "ns3/ipv4-address-helper.h"
+#include "ns3/ipv4-interface-container.h"
+#include "ns3/ipv4-global-routing-helper.h"
+#include "ns3/point-to-point-helper.h"
+#include "ns3/application-container.h"
+#include "ns3/uinteger.h"
+#include "ns3/core-module.h"
+#include "ns3/error-model.h"
+#include "ns3/trace-helper.h"
+#include "puenteHelper.h"
+#include "ns3/csma-module.h"
+#include "ns3/network-module.h"
+#include "ns3/internet-module.h"
+
+
+using namespace ns3;
+
+#define MASCARA   "255.255.255.0"
+
+NS_LOG_COMPONENT_DEFINE ("Fat_tree");
+
+void printRoutingTable (Ptr<Node> node)
+{
+    Ipv4StaticRoutingHelper helper;
+    Ptr<Ipv4> stack = node -> GetObject<Ipv4>();
+    Ptr<Ipv4StaticRouting> staticrouting = helper.GetStaticRouting(stack);
+    uint32_t numroutes=staticrouting->GetNRoutes();
+    Ipv4RoutingTableEntry entry;
+    std::cout << "Routing table for device: " << Names::FindName(node) <<"\n";
+    std::cout << "Destination\tMask\t\tGateway\t\tIface\n";
+    for (uint32_t i =0 ; i<numroutes;i++) {
+        entry =staticrouting->GetRoute(i);
+        std::cout << entry.GetDestNetwork()  << "\t" << entry.GetDestNetworkMask() << "\t" << entry.GetGateway() << "\t\t" << entry.GetInterface() << "\n";
+     }
+    return;
+}
+
+void
+escenario ( )
+{ 
+    // [NODOS]
+    // Servidores
+    NodeContainer pc1_1, pc1_2, pc1_3, pc1_4, pc2_1, pc2_2, pc2_3, pc2_4, pc3_1, pc3_2, pc3_3, pc3_4, pc4_1, pc4_2, pc4_3, pc4_4;
+    // Switches de los pods
+    NodeContainer  sw1_1, sw1_2, sw1_3, sw1_4, sw2_1, sw2_2, sw2_3, sw2_4, sw3_1, sw3_2, sw3_3, sw3_4, sw4_1, sw4_2, sw4_3, sw4_4;
+    // Switches del Core
+    NodeContainer swC1, swC2, swC3, swC4;
+
+    pc1_1.Create(1);
+    pc1_2.Create(1);
+    pc1_3.Create(1);
+    pc1_4.Create(1);
+    pc2_1.Create(1);
+    pc2_2.Create(1);
+    pc2_3.Create(1);
+    pc2_4.Create(1);
+    pc3_1.Create(1);
+    pc3_2.Create(1);
+    pc3_3.Create(1);
+    pc3_4.Create(1);
+    pc4_1.Create(1);
+    pc4_2.Create(1);
+    pc4_3.Create(1);
+    pc4_4.Create(1);
+    // ----
+    sw1_1.Create(1);
+    sw1_2.Create(1);
+    sw1_3.Create(1);
+    sw1_4.Create(1);
+    sw2_1.Create(1);
+    sw2_2.Create(1);
+    sw2_3.Create(1);
+    sw2_4.Create(1);
+    sw3_1.Create(1);
+    sw3_2.Create(1);
+    sw3_3.Create(1);
+    sw3_4.Create(1);
+    sw4_1.Create(1);
+    sw4_2.Create(1);
+    sw4_3.Create(1);
+    sw4_4.Create(1);
+    // ----
+    swC1.Create(1);
+    swC2.Create(1);
+    swC3.Create(1);
+    swC4.Create(1);
+
+    NS_LOG_DEBUG("[Escenario] Nodos de todos los elementos creados.");
+
+    // [HELPERs]
+    // Helper para la instalación de las pilas de protocolos
+    InternetStackHelper h_pila;
+    h_pila.SetIpv6StackInstall (false); // Desactivamos la pila correspondiente a IPv6
+    // Pila de protocolos de los switches del Core
+    h_pila.Install(swC1);
+    h_pila.Install(swC2);
+    h_pila.Install(swC3);
+    h_pila.Install(swC4);
+    NS_LOG_DEBUG("[Escenario] Pila de los switches del Core instanciada.");
+
+    // Helper para la creación de los enlaces csma entre los equipos finales y los switches del lower layer
+    CsmaHelper h_csma;
+
+    // Helper para la creación de los enlaces p2p entre los switches
+    PointToPointHelper h_p2p;
+
+    // Helper para el direccionamiento IPv4
+    Ipv4AddressHelper h_ipv4;
+
+    // ************************************** POD 1 **************************************
+    NS_LOG_DEBUG("\n[Escenario] POD 1 ----------------------------------------------------------------------");
+    // [PILA DE PROTOCOLOS] Pod 1
+    h_pila.Install(pc1_1);
+    h_pila.Install(pc1_2);
+    h_pila.Install(pc1_3);
+    h_pila.Install(pc1_4);
+    h_pila.Install(sw1_1);
+    h_pila.Install(sw1_2);
+    h_pila.Install(sw1_3);
+    h_pila.Install(sw1_4);
+    NS_LOG_DEBUG("[Escenario] Pila de los switches y equipos finales del pod 1 instanciada.");
+
+    // [ENLACES] Pod 1
+    NodeContainer n1_1 = NodeContainer (pc1_1,sw1_1);
+    NodeContainer n1_2 = NodeContainer (pc1_2,sw1_1);
+    NodeContainer n1_3 = NodeContainer (pc1_3,sw1_2);
+    NodeContainer n1_4 = NodeContainer (pc1_4,sw1_2);
+
+    NodeContainer n1_13 = NodeContainer (sw1_1,sw1_3);
+    NodeContainer n1_14 = NodeContainer (sw1_1,sw1_4);
+    NodeContainer n1_23 = NodeContainer (sw1_2,sw1_3);
+    NodeContainer n1_24 = NodeContainer (sw1_2,sw1_4);
+
+    NodeContainer n1_3c1 = NodeContainer (sw1_3,swC1);
+    NodeContainer n1_3c2 = NodeContainer (sw1_3,swC2);
+    NodeContainer n1_4c3 = NodeContainer (sw1_4,swC3);
+    NodeContainer n1_4c4 = NodeContainer (sw1_4,swC4);
+
+    // Enlace CSMA entre los equipos finales y los switches del lower layer
+    NetDeviceContainer d1_1 = h_csma.Install(n1_1);
+    NetDeviceContainer d1_2 = h_csma.Install(n1_2);
+    NetDeviceContainer d1_3 = h_csma.Install(n1_3);
+    NetDeviceContainer d1_4 = h_csma.Install(n1_4);
+    NS_LOG_DEBUG("[Escenario] Enlaces CSMA entre los equipos finales y los switches del lower layer creados.");
+
+    // Enlace P2P entre los switches del lower layer y los switches del upper layer
+    NetDeviceContainer d1_13 = h_p2p.Install(n1_13);
+    NetDeviceContainer d1_14 = h_p2p.Install(n1_14);
+    NetDeviceContainer d1_23 = h_p2p.Install(n1_23);
+    NetDeviceContainer d1_24 = h_p2p.Install(n1_24);
+    NS_LOG_DEBUG("[Escenario] Enlaces P2P entre los switches del lower layer y los switches del upper layer creados.");
+
+    // Enlace P2P entre los switches del upper layer y los switches del Core
+    NetDeviceContainer d1_3c1 = h_p2p.Install(n1_3c1);
+    NetDeviceContainer d1_3c2 = h_p2p.Install(n1_3c2);
+    NetDeviceContainer d1_4c3 = h_p2p.Install(n1_4c3);
+    NetDeviceContainer d1_4c4 = h_p2p.Install(n1_4c4);
+    NS_LOG_DEBUG("[Escenario] Enlaces P2P entre los switches del upper layer y los switches del Core creados.");
+
+    // [DIRECCIONAMIENTO IP] Pod 1 
+    h_ipv4.SetBase("10.1.0.0", MASCARA);
+    Ipv4InterfaceContainer i1_1 = h_ipv4.Assign(d1_1);
+
+    h_ipv4.SetBase("10.1.1.0", MASCARA);
+    Ipv4InterfaceContainer i1_2 = h_ipv4.Assign(d1_2);
+
+    h_ipv4.SetBase("10.1.2.0", MASCARA);
+    Ipv4InterfaceContainer i1_3 = h_ipv4.Assign(d1_3);
+
+    h_ipv4.SetBase("10.1.3.0", MASCARA);
+    Ipv4InterfaceContainer i1_4 = h_ipv4.Assign(d1_4);
+
+    h_ipv4.SetBase("10.1.4.0", MASCARA);
+    Ipv4InterfaceContainer i1_13 = h_ipv4.Assign(d1_13);
+
+    h_ipv4.SetBase("10.1.5.0", MASCARA);
+    Ipv4InterfaceContainer i1_14 = h_ipv4.Assign(d1_14);
+
+    h_ipv4.SetBase("10.1.6.0", MASCARA);
+    Ipv4InterfaceContainer i1_23 = h_ipv4.Assign(d1_23);
+
+    h_ipv4.SetBase("10.1.7.0", MASCARA);
+    Ipv4InterfaceContainer i1_24 = h_ipv4.Assign(d1_24);
+
+    h_ipv4.SetBase("10.1.8.0", MASCARA);
+    Ipv4InterfaceContainer i1_3c1 = h_ipv4.Assign(d1_3c1);
+
+    h_ipv4.SetBase("10.1.9.0", MASCARA);
+    Ipv4InterfaceContainer i1_3c2 = h_ipv4.Assign(d1_3c2);
+    
+    h_ipv4.SetBase("10.1.10.0", MASCARA);
+    Ipv4InterfaceContainer i1_4c3 = h_ipv4.Assign(d1_4c3);
+
+    h_ipv4.SetBase("10.1.11.0", MASCARA);
+    Ipv4InterfaceContainer i1_4c4 = h_ipv4.Assign(d1_4c4);
+
+    NS_LOG_DEBUG("[Escenario] Direcciones IPv4 asignadas a los equipos del pod 1.");
+
+    // ************************************** POD 2 **************************************
+    NS_LOG_DEBUG("\n[Escenario] POD 2 ----------------------------------------------------------------------");
+    // [PILA DE PROTOCOLOS] Pod 2
+    h_pila.Install(pc2_1);
+    h_pila.Install(pc2_2);
+    h_pila.Install(pc2_3);
+    h_pila.Install(pc2_4);
+    h_pila.Install(sw2_1);
+    h_pila.Install(sw2_2);
+    h_pila.Install(sw2_3);
+    h_pila.Install(sw2_4);
+    NS_LOG_DEBUG("[Escenario] Pila de los switches y equipos finales del pod 2 instanciada.");
+
+    // [ENLACES] Pod 2
+    NodeContainer n2_1 = NodeContainer (pc2_1,sw2_1);
+    NodeContainer n2_2 = NodeContainer (pc2_2,sw2_1);
+    NodeContainer n2_3 = NodeContainer (pc2_3,sw2_2);
+    NodeContainer n2_4 = NodeContainer (pc2_4,sw2_2);
+
+    NodeContainer n2_13 = NodeContainer (sw2_1,sw2_3);
+    NodeContainer n2_14 = NodeContainer (sw2_1,sw2_4);
+    NodeContainer n2_23 = NodeContainer (sw2_2,sw2_3);
+    NodeContainer n2_24 = NodeContainer (sw2_2,sw2_4);
+
+    NodeContainer n2_3c1 = NodeContainer (sw2_3,swC1);
+    NodeContainer n2_3c2 = NodeContainer (sw2_3,swC2);
+    NodeContainer n2_4c3 = NodeContainer (sw2_4,swC3);
+    NodeContainer n2_4c4 = NodeContainer (sw2_4,swC4);
+
+    // Enlace CSMA entre los equipos finales y los switches del lower layer
+    NetDeviceContainer d2_1 = h_csma.Install(n2_1);
+    NetDeviceContainer d2_2 = h_csma.Install(n2_2);
+    NetDeviceContainer d2_3 = h_csma.Install(n2_3);
+    NetDeviceContainer d2_4 = h_csma.Install(n2_4);
+    NS_LOG_DEBUG("[Escenario] Enlaces CSMA entre los equipos finales y los switches del lower layer creados.");
+
+    // Enlace P2P entre los switches del lower layer y los switches del upper layer
+    NetDeviceContainer d2_13 = h_p2p.Install(n2_13);
+    NetDeviceContainer d2_14 = h_p2p.Install(n2_14);
+    NetDeviceContainer d2_23 = h_p2p.Install(n2_23);
+    NetDeviceContainer d2_24 = h_p2p.Install(n2_24);
+    NS_LOG_DEBUG("[Escenario] Enlaces P2P entre los switches del lower layer y los switches del upper layer creados.");
+
+    // Enlace P2P entre los switches del upper layer y los switches del Core
+    NetDeviceContainer d2_3c1 = h_p2p.Install(n2_3c1);
+    NetDeviceContainer d2_3c2 = h_p2p.Install(n2_3c2);
+    NetDeviceContainer d2_4c3 = h_p2p.Install(n2_4c3);
+    NetDeviceContainer d2_4c4 = h_p2p.Install(n2_4c4);
+    NS_LOG_DEBUG("[Escenario] Enlaces P2P entre los switches del upper layer y los switches del Core creados.");
+
+    // [DIRECCIONAMIENTO IP] Pod 2 
+    h_ipv4.SetBase("10.2.0.0", MASCARA);
+    Ipv4InterfaceContainer i2_1 = h_ipv4.Assign(d2_1);
+
+    h_ipv4.SetBase("10.2.1.0", MASCARA);
+    Ipv4InterfaceContainer i2_2 = h_ipv4.Assign(d2_2);
+
+    h_ipv4.SetBase("10.2.2.0", MASCARA);
+    Ipv4InterfaceContainer i2_3 = h_ipv4.Assign(d2_3);
+
+    h_ipv4.SetBase("10.2.3.0", MASCARA);
+    Ipv4InterfaceContainer i2_4 = h_ipv4.Assign(d2_4);
+
+    h_ipv4.SetBase("10.2.4.0", MASCARA);
+    Ipv4InterfaceContainer i2_13 = h_ipv4.Assign(d2_13);
+
+    h_ipv4.SetBase("10.2.5.0", MASCARA);
+    Ipv4InterfaceContainer i2_14 = h_ipv4.Assign(d2_14);
+
+    h_ipv4.SetBase("10.2.6.0", MASCARA);
+    Ipv4InterfaceContainer i2_23 = h_ipv4.Assign(d2_23);
+
+    h_ipv4.SetBase("10.2.7.0", MASCARA);
+    Ipv4InterfaceContainer i2_24 = h_ipv4.Assign(d2_24);
+
+    h_ipv4.SetBase("10.2.8.0", MASCARA);
+    Ipv4InterfaceContainer i2_3c1 = h_ipv4.Assign(d2_3c1);
+
+    h_ipv4.SetBase("10.2.9.0", MASCARA);
+    Ipv4InterfaceContainer i2_3c2 = h_ipv4.Assign(d2_3c2);
+    
+    h_ipv4.SetBase("10.2.10.0", MASCARA);
+    Ipv4InterfaceContainer i2_4c3 = h_ipv4.Assign(d2_4c3);
+
+    h_ipv4.SetBase("10.2.11.0", MASCARA);
+    Ipv4InterfaceContainer i2_4c4 = h_ipv4.Assign(d2_4c4);
+
+    NS_LOG_DEBUG("[Escenario] Direcciones IPv4 asignadas a los equipos del pod 2.");
+
+
+    // ************************************** POD 3 **************************************
+    NS_LOG_DEBUG("\n[Escenario] POD 3 ----------------------------------------------------------------------");
+    // [PILA DE PROTOCOLOS] Pod 3
+    h_pila.Install(pc3_1);
+    h_pila.Install(pc3_2);
+    h_pila.Install(pc3_3);
+    h_pila.Install(pc3_4);
+    h_pila.Install(sw3_1);
+    h_pila.Install(sw3_2);
+    h_pila.Install(sw3_3);
+    h_pila.Install(sw3_4);
+    NS_LOG_DEBUG("[Escenario] Pila de los switches y equipos finales del pod 3 instanciada.");
+
+    // [ENLACES] Pod 3
+    NodeContainer n3_1 = NodeContainer (pc3_1,sw3_1);
+    NodeContainer n3_2 = NodeContainer (pc3_2,sw3_1);
+    NodeContainer n3_3 = NodeContainer (pc3_3,sw3_2);
+    NodeContainer n3_4 = NodeContainer (pc3_4,sw3_2);
+
+    NodeContainer n3_13 = NodeContainer (sw3_1,sw3_3);
+    NodeContainer n3_14 = NodeContainer (sw3_1,sw3_4);
+    NodeContainer n3_23 = NodeContainer (sw3_2,sw3_3);
+    NodeContainer n3_24 = NodeContainer (sw3_2,sw3_4);
+
+    NodeContainer n3_3c1 = NodeContainer (sw3_3,swC1);
+    NodeContainer n3_3c2 = NodeContainer (sw3_3,swC2);
+    NodeContainer n3_4c3 = NodeContainer (sw3_4,swC3);
+    NodeContainer n3_4c4 = NodeContainer (sw3_4,swC4);
+
+    // Enlace CSMA entre los equipos finales y los switches del lower layer
+    NetDeviceContainer d3_1 = h_csma.Install(n3_1);
+    NetDeviceContainer d3_2 = h_csma.Install(n3_2);
+    NetDeviceContainer d3_3 = h_csma.Install(n3_3);
+    NetDeviceContainer d3_4 = h_csma.Install(n3_4);
+    NS_LOG_DEBUG("[Escenario] Enlaces CSMA entre los equipos finales y los switches del lower layer creados.");
+
+    // Enlace P2P entre los switches del lower layer y los switches del upper layer
+    NetDeviceContainer d3_13 = h_p2p.Install(n3_13);
+    NetDeviceContainer d3_14 = h_p2p.Install(n3_14);
+    NetDeviceContainer d3_23 = h_p2p.Install(n3_23);
+    NetDeviceContainer d3_24 = h_p2p.Install(n3_24);
+    NS_LOG_DEBUG("[Escenario] Enlaces P2P entre los switches del lower layer y los switches del upper layer creados.");
+
+    // Enlace P2P entre los switches del upper layer y los switches del Core
+    NetDeviceContainer d3_3c1 = h_p2p.Install(n3_3c1);
+    NetDeviceContainer d3_3c2 = h_p2p.Install(n3_3c2);
+    NetDeviceContainer d3_4c3 = h_p2p.Install(n3_4c3);
+    NetDeviceContainer d3_4c4 = h_p2p.Install(n3_4c4);
+    NS_LOG_DEBUG("[Escenario] Enlaces P2P entre los switches del upper layer y los switches del Core creados.");
+
+    // [DIRECCIONAMIENTO IP] Pod 3 
+    h_ipv4.SetBase("10.3.0.0", MASCARA);
+    Ipv4InterfaceContainer i3_1 = h_ipv4.Assign(d3_1);
+
+    h_ipv4.SetBase("10.3.1.0", MASCARA);
+    Ipv4InterfaceContainer i3_2 = h_ipv4.Assign(d3_2);
+
+    h_ipv4.SetBase("10.3.2.0", MASCARA);
+    Ipv4InterfaceContainer i3_3 = h_ipv4.Assign(d3_3);
+
+    h_ipv4.SetBase("10.3.3.0", MASCARA);
+    Ipv4InterfaceContainer i3_4 = h_ipv4.Assign(d3_4);
+
+    h_ipv4.SetBase("10.3.4.0", MASCARA);
+    Ipv4InterfaceContainer i3_13 = h_ipv4.Assign(d3_13);
+
+    h_ipv4.SetBase("10.3.5.0", MASCARA);
+    Ipv4InterfaceContainer i3_14 = h_ipv4.Assign(d3_14);
+
+    h_ipv4.SetBase("10.3.6.0", MASCARA);
+    Ipv4InterfaceContainer i3_23 = h_ipv4.Assign(d3_23);
+
+    h_ipv4.SetBase("10.3.7.0", MASCARA);
+    Ipv4InterfaceContainer i3_24 = h_ipv4.Assign(d3_24);
+
+    h_ipv4.SetBase("10.3.8.0", MASCARA);
+    Ipv4InterfaceContainer i3_3c1 = h_ipv4.Assign(d3_3c1);
+
+    h_ipv4.SetBase("10.3.9.0", MASCARA);
+    Ipv4InterfaceContainer i3_3c2 = h_ipv4.Assign(d3_3c2);
+    
+    h_ipv4.SetBase("10.3.10.0", MASCARA);
+    Ipv4InterfaceContainer i3_4c3 = h_ipv4.Assign(d3_4c3);
+
+    h_ipv4.SetBase("10.3.11.0", MASCARA);
+    Ipv4InterfaceContainer i3_4c4 = h_ipv4.Assign(d3_4c4);
+
+    NS_LOG_DEBUG("[Escenario] Direcciones IPv4 asignadas a los equipos del pod 3.");
+
+
+    // ************************************** POD 4 **************************************
+    NS_LOG_DEBUG("\n[Escenario] POD 4 ----------------------------------------------------------------------");
+    // [PILA DE PROTOCOLOS] Pod 4
+    h_pila.Install(pc4_1);
+    h_pila.Install(pc4_2);
+    h_pila.Install(pc4_3);
+    h_pila.Install(pc4_4);
+    h_pila.Install(sw4_1);
+    h_pila.Install(sw4_2);
+    h_pila.Install(sw4_3);
+    h_pila.Install(sw4_4);
+    NS_LOG_DEBUG("[Escenario] Pila de los switches y equipos finales del pod 4 instanciada.");
+
+    // [ENLACES] Pod 4
+    NodeContainer n4_1 = NodeContainer (pc4_1,sw4_1);
+    NodeContainer n4_2 = NodeContainer (pc4_2,sw4_1);
+    NodeContainer n4_3 = NodeContainer (pc4_3,sw4_2);
+    NodeContainer n4_4 = NodeContainer (pc4_4,sw4_2);
+
+    NodeContainer n4_13 = NodeContainer (sw4_1,sw4_3);
+    NodeContainer n4_14 = NodeContainer (sw4_1,sw4_4);
+    NodeContainer n4_23 = NodeContainer (sw4_2,sw4_3);
+    NodeContainer n4_24 = NodeContainer (sw4_2,sw4_4);
+
+    NodeContainer n4_3c1 = NodeContainer (sw4_3,swC1);
+    NodeContainer n4_3c2 = NodeContainer (sw4_3,swC2);
+    NodeContainer n4_4c3 = NodeContainer (sw4_4,swC3);
+    NodeContainer n4_4c4 = NodeContainer (sw4_4,swC4);
+
+    // Enlace CSMA entre los equipos finales y los switches del lower layer
+    NetDeviceContainer d4_1 = h_csma.Install(n4_1);
+    NetDeviceContainer d4_2 = h_csma.Install(n4_2);
+    NetDeviceContainer d4_3 = h_csma.Install(n4_3);
+    NetDeviceContainer d4_4 = h_csma.Install(n4_4);
+    NS_LOG_DEBUG("[Escenario] Enlaces CSMA entre los equipos finales y los switches del lower layer creados.");
+
+    // Enlace P2P entre los switches del lower layer y los switches del upper layer
+    NetDeviceContainer d4_13 = h_p2p.Install(n4_13);
+    NetDeviceContainer d4_14 = h_p2p.Install(n4_14);
+    NetDeviceContainer d4_23 = h_p2p.Install(n4_23);
+    NetDeviceContainer d4_24 = h_p2p.Install(n4_24);
+    NS_LOG_DEBUG("[Escenario] Enlaces P2P entre los switches del lower layer y los switches del upper layer creados.");
+
+    // Enlace P2P entre los switches del upper layer y los switches del Core
+    NetDeviceContainer d4_3c1 = h_p2p.Install(n4_3c1);
+    NetDeviceContainer d4_3c2 = h_p2p.Install(n4_3c2);
+    NetDeviceContainer d4_4c3 = h_p2p.Install(n4_4c3);
+    NetDeviceContainer d4_4c4 = h_p2p.Install(n4_4c4);
+    NS_LOG_DEBUG("[Escenario] Enlaces P2P entre los switches del upper layer y los switches del Core creados.");
+
+    // [DIRECCIONAMIENTO IP] Pod 4 
+    h_ipv4.SetBase("10.4.0.0", MASCARA);
+    Ipv4InterfaceContainer i4_1 = h_ipv4.Assign(d4_1);
+
+    h_ipv4.SetBase("10.4.1.0", MASCARA);
+    Ipv4InterfaceContainer i4_2 = h_ipv4.Assign(d4_2);
+
+    h_ipv4.SetBase("10.4.2.0", MASCARA);
+    Ipv4InterfaceContainer i4_3 = h_ipv4.Assign(d4_3);
+
+    h_ipv4.SetBase("10.4.3.0", MASCARA);
+    Ipv4InterfaceContainer i4_4 = h_ipv4.Assign(d4_4);
+
+    h_ipv4.SetBase("10.4.4.0", MASCARA);
+    Ipv4InterfaceContainer i4_13 = h_ipv4.Assign(d4_13);
+
+    h_ipv4.SetBase("10.4.5.0", MASCARA);
+    Ipv4InterfaceContainer i4_14 = h_ipv4.Assign(d4_14);
+
+    h_ipv4.SetBase("10.4.6.0", MASCARA);
+    Ipv4InterfaceContainer i4_23 = h_ipv4.Assign(d4_23);
+
+    h_ipv4.SetBase("10.4.7.0", MASCARA);
+    Ipv4InterfaceContainer i4_24 = h_ipv4.Assign(d4_24);
+
+    h_ipv4.SetBase("10.4.8.0", MASCARA);
+    Ipv4InterfaceContainer i4_3c1 = h_ipv4.Assign(d4_3c1);
+
+    h_ipv4.SetBase("10.4.9.0", MASCARA);
+    Ipv4InterfaceContainer i4_3c2 = h_ipv4.Assign(d4_3c2);
+    
+    h_ipv4.SetBase("10.4.10.0", MASCARA);
+    Ipv4InterfaceContainer i4_4c3 = h_ipv4.Assign(d4_4c3);
+
+    h_ipv4.SetBase("10.4.11.0", MASCARA);
+    Ipv4InterfaceContainer i4_4c4 = h_ipv4.Assign(d4_4c4);
+
+    NS_LOG_DEBUG("[Escenario] Direcciones IPv4 asignadas a los equipos del pod 4.");
+
+    NS_LOG_DEBUG("\n[Escenario] ----------------------------------------------------------------------------");
+    // [Tablas de encaminamiento]
+    Ipv4GlobalRoutingHelper::PopulateRoutingTables();
+    
+    NS_LOG_DEBUG("[Escenario] Se crean las tablas de reenvío.");
+    printRoutingTable(sw1_1.Get(0));
+
+
+    // ----------------------------------------------
+    Simulator::Stop (Time("1000s"));
+    NS_LOG_INFO ("\n[SIMULACION] Inicio de la simulación en el instante: " << Simulator::Now().GetSeconds() << "s\n");
+    Simulator::Run ();
+    NS_LOG_INFO ("[SIMULACION] Fin de la simulación en el instante: " << Simulator::Now().GetSeconds() << "s\n");
+
+}
+
+
+int main (int argc, char *argv [])
+{
+  // Variables por línea de comandos
+
+
+  // Línea de comandos
+  // CommandLine cmd;
+  // cmd.AddValue ("num_fuentes", "Número de fuentes del tipo UdpEchoClient.", numFuentes);
+  
+  // cmd.Parse (argc, argv); 
+
+  // NS_LOG_INFO("[PARAMETROS] --");
+
+  Time::SetResolution (Time::NS);  
+
+  escenario(); 
+}
