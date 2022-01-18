@@ -19,7 +19,7 @@
 #include "ns3/netanim-module.h"
 #include "ns3/on-off-helper.h"
 #include "ns3/packet-sink-helper.h"
-
+#include "ns3/tcp-socket.h"
 
 // #include "extra.h"
 
@@ -41,7 +41,14 @@ void escenario ();
 // ** Metodo para crear escenario **
 // *********************************
 void
-escenario ( )
+escenario ( DataRate tasaEnvioCsma  ,
+            Time     retardoCsma    ,
+            uint32_t mtuCsma        ,
+            DataRate tasaEnvioP2P   ,
+            Time     retardoP2P     ,
+            DataRate tasaEnvioFuente,
+            uint32_t tamPaqFuente
+          )
 { 
   // [NODOS]
   // Servidores
@@ -105,9 +112,14 @@ escenario ( )
 
   // Helper para la creación de los enlaces csma entre los equipos finales y los switches del lower layer
   CsmaHelper h_csma;
+  h_csma.SetChannelAttribute ("DataRate",DataRateValue (tasaEnvioCsma));
+  h_csma.SetChannelAttribute ("Delay", TimeValue (retardoCsma));
+  h_csma.SetDeviceAttribute ("Mtu", UintegerValue (mtuCsma));
 
   // Helper para la creación de los enlaces p2p entre los switches
   PointToPointHelper h_p2p;
+  h_p2p.SetDeviceAttribute ("DataRate", DataRateValue (tasaEnvioP2P));
+  h_p2p.SetChannelAttribute ("Delay", TimeValue (retardoP2P));
 
   // Helper para el direccionamiento IPv4
   Ipv4AddressHelper h_ipv4;
@@ -492,49 +504,44 @@ escenario ( )
 
 
   // [CLI-SRV]
-  Ptr<Node> n_servidor = pc1_1.Get(0);
-  Ptr<Node> n_cliente = c_cliente.Get(0);
+  Ptr<Node> n_servidor = pc1_1.Get(0);     // Fuente
+  Ptr<Node> n_cliente = c_cliente.Get(0);  // Sumidero
 
-
+  // ***********************************************************************************
   // Cliente (sumidero)
-  uint16_t port = 50000;
-  Address sinkLocalAddress (InetSocketAddress (Ipv4Address::GetAny (), port));
-  PacketSinkHelper sinkHelper ("ns3::TcpSocketFactory", sinkLocalAddress);
-  ApplicationContainer sinkApp = sinkHelper.Install (n_servidor);
-  sinkApp.Start (Seconds (1.0));
-  sinkApp.Stop (Seconds (10.0));
+  uint16_t puerto = 50000;
+  Address sinkLocalAddress(InetSocketAddress(Ipv4Address::GetAny(), puerto));
+  PacketSinkHelper h_sink ("ns3::TcpSocketFactory", sinkLocalAddress);
+  ApplicationContainer a_cliente = h_sink.Install(n_cliente);
+  a_cliente.Start(Seconds (1.0));
+  a_cliente.Stop(Seconds (10.0));
 
-  // Create the OnOff applications to send TCP to the server
-  OnOffHelper clientHelper ("ns3::TcpSocketFactory", Address ());
-  clientHelper.SetAttribute ("OnTime", StringValue ("ns3::ConstantRandomVariable[Constant=1]"));
-  clientHelper.SetAttribute ("OffTime", StringValue ("ns3::ConstantRandomVariable[Constant=0]"));
+  // Aplicación OnOff que envía TCP al sumidero 
+  OnOffHelper h_onoff("ns3::TcpSocketFactory", Address());
+  h_onoff.SetAttribute("OnTime", StringValue("ns3::ConstantRandomVariable[Constant=1]"));
+  h_onoff.SetAttribute("OffTime", StringValue("ns3::ConstantRandomVariable[Constant=0]"));
+  h_onoff.SetAttribute("DataRate", DataRateValue(tasaEnvioFuente));
+  h_onoff.SetAttribute("PacketSize", UintegerValue(tamPaqFuente));
 
-  //normally wouldn't need a loop here but the server IP address is different
-  //on each p2p subnet
-  ApplicationContainer clientApps;
-  AddressValue remoteAddress (InetSocketAddress (n_servidor->GetObject<Ipv4L3Protocol>()->GetAddress(1, 0).GetLocal(), port));
-  clientHelper.SetAttribute ("Remote", remoteAddress);
-  clientApps.Add (clientHelper.Install (n_cliente));
+  // Asociación del cliente con el servidor
+  ApplicationContainer a_servidor;
+  AddressValue remoteAddress(InetSocketAddress(n_cliente->GetObject<Ipv4L3Protocol>()->GetAddress(1, 0).GetLocal(), puerto));
+  h_onoff.SetAttribute("Remote", remoteAddress);
+  a_servidor.Add(h_onoff.Install(n_servidor));
 
-   clientApps.Start (Seconds (1.0));
-   clientApps.Stop (Seconds (10.0));
+  a_servidor.Start(Seconds(1.0));
+  a_servidor.Stop(Seconds(10.0));
 
   // [TRAZAS PCAP]
   CsmaHelper h_csma_pcap;
   h_csma_pcap.EnablePcap("fuente", n_servidor->GetDevice(1));
   h_csma_pcap.EnablePcap("sumidero", n_cliente->GetDevice(1));
   
-
-
-
-  
-
   // [TABLAS DE ENCAMINAMIENTO]
   Ipv4GlobalRoutingHelper::PopulateRoutingTables();
   NS_LOG_DEBUG("[Escenario] Se crean las tablas de reenvío.");
   printRoutingTable(sw1_1.Get(0));
   NS_LOG_DEBUG("\n[Escenario] ----------------------------------------------------------------------------");
-
 }
 
 // ******************************
@@ -563,13 +570,24 @@ void printRoutingTable (Ptr<Node> node)
 int main (int argc, char *argv [])
 {
   // Variables por línea de comandos
-
+  DataRate tasaEnvioCsma ("6Mbps");
+  Time retardoCsma ("5ms");
+  uint32_t mtuCsma (2000);
+  DataRate tasaEnvioP2P ("6Mbps");
+  Time retardoP2P ("5ms");
+  DataRate tasaEnvioFuente ("6Mbps");
+  uint32_t tamPaqFuente (1000);
 
   // Línea de comandos
-  // CommandLine cmd;
-  // cmd.AddValue ("num_fuentes", "Número de fuentes del tipo UdpEchoClient.", numFuentes);
-  
-  // cmd.Parse (argc, argv); 
+  CommandLine cmd;
+  cmd.AddValue ("tasaEnvioCsma", "Tasa de envío de los canales CSMA.", tasaEnvioCsma);
+  cmd.AddValue ("retardoCsma", "Retardo de los canales CSMA.", retardoCsma);
+  cmd.AddValue ("mtuCsma", "MTU de los canales CSMA.", mtuCsma);
+  cmd.AddValue ("tasaEnvioP2P", "Tasa de envío de los canales P2P.", tasaEnvioP2P);
+  cmd.AddValue ("retardoP2P", "Retardo de los canales P2P.", retardoP2P);
+  cmd.AddValue ("tasaEnvioFuente", "Tasa de envío del servidor.", tasaEnvioFuente);
+  cmd.AddValue ("tamPaqFuente", "Tamaño de los paquetes que envía el servidor.", tamPaqFuente);
+  cmd.Parse (argc, argv); 
 
   // NS_LOG_INFO("[PARAMETROS] --");
 
@@ -578,7 +596,7 @@ int main (int argc, char *argv [])
 
   Time::SetResolution (Time::NS);  
 
-  escenario(); 
+  escenario(tasaEnvioCsma, retardoCsma, mtuCsma, tasaEnvioP2P, retardoP2P, tasaEnvioFuente, tamPaqFuente); 
   // ----------------------------------------------
   Simulator::Stop (Time("20s"));
   NS_LOG_INFO ("\n[SIMULACION] Inicio de la simulación en el instante: " << Simulator::Now().GetSeconds() << "s\n");
