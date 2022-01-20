@@ -12,7 +12,6 @@
 #include "ns3/core-module.h"
 #include "ns3/error-model.h"
 #include "ns3/trace-helper.h"
-#include "puenteHelper.h"
 #include "ns3/csma-module.h"
 #include "ns3/network-module.h"
 #include "ns3/internet-module.h"
@@ -20,6 +19,27 @@
 #include "ns3/on-off-helper.h"
 #include "ns3/packet-sink-helper.h"
 #include "ns3/tcp-socket.h"
+#include "ns3/udp-client-server-helper.h"
+#include "ns3/udp-server.h"
+#include "ns3/udp-echo-client.h"
+#include "observadorPaquetes.h"
+#include "ns3/queue-size.h"
+#include "ns3/queue.h"
+#include "ns3/queue-disc.h"
+#include "ns3/traffic-control-layer.h"
+#include "colaTxObservador.h"
+#include "colaTclObservador.h"
+
+
+//****
+#include "ns3/gnuplot.h"
+#include "punto.h"
+//#include "ns3/log.h"
+#include "ns3/average.h"
+//#include "ns3/data-rate.h"
+//#include "ns3/nstime.h"
+//#include "observadorPaquetes.h"
+//****
 
 // #include "extra.h"
 
@@ -27,6 +47,19 @@
 using namespace ns3;
 
 #define MASCARA   "255.255.255.0"
+#define TAM_COLA_TX "0p"
+#define TAM_COLA_TCL 0
+
+
+// ****
+#define NUM_PUNTOS 8
+#define NUM_CURVAS 1
+#define ITERACIONES 5
+// Para 30 muestras y un 95% de certidumbre (0.025 -- 30-1 --> 2.0452)
+// Para 5 muestras y un 95% de certidumbre (0.025 -- 5-1 --> 2.7765)
+#define TSTUDENT 2.7765
+
+// ****
 
 NS_LOG_COMPONENT_DEFINE ("Fat_tree");
 
@@ -34,22 +67,33 @@ NS_LOG_COMPONENT_DEFINE ("Fat_tree");
 // *************************
 // ** Declaración métodos **
 // *************************
-void printRoutingTable (Ptr<Node> node);
-void escenario ();
+void             printRoutingTable (Ptr<Node> node);
+void             escenario         ();
+Gnuplot          grafica           (DataRate tasaEnvioCsma, Time retardoCsma, uint32_t mtuCsma, DataRate tasaEnvioP2P, Time retardoP2P,
+                                    DataRate tasaEnvioFuente, uint32_t tamPaqFuente, Time ton, Time toff, Time stopTime);
+Gnuplot2dDataset curva             (DataRate tasaEnvioCsma, Time retardoCsma, uint32_t mtuCsma, DataRate tasaEnvioP2P, Time retardoP2P,
+                                    DataRate tasaEnvioFuente, uint32_t tamPaqFuente, Time ton, Time toff, Time stopTime);
+Punto            punto             (DataRate tasaEnvioCsma, Time retardoCsma, uint32_t mtuCsma, DataRate tasaEnvioP2P, Time retardoP2P,
+                                    DataRate tasaEnvioFuente, uint32_t tamPaqFuente, Time ton, Time toff, Time stopTime);
+
 
 // *********************************
 // ** Metodo para crear escenario **
 // *********************************
-void
+ObservadorPaquetes
 escenario ( DataRate tasaEnvioCsma  ,
             Time     retardoCsma    ,
             uint32_t mtuCsma        ,
             DataRate tasaEnvioP2P   ,
             Time     retardoP2P     ,
             DataRate tasaEnvioFuente,
-            uint32_t tamPaqFuente
+            uint32_t tamPaqFuente   ,
+            Time     ton            ,
+            Time     toff           ,
+            Time     stopTime       
           )
 { 
+  Simulator::Destroy();
   // [NODOS]
   // Servidores
   NodeContainer pc1_1, pc1_2, pc1_3, pc1_4, pc2_1, pc2_2, pc2_3, pc2_4, pc3_1, pc3_2, pc3_3, pc3_4, pc4_1, pc4_2, pc4_3, pc4_4;
@@ -498,39 +542,91 @@ escenario ( DataRate tasaEnvioCsma  ,
   h_ipv4.SetBase("78.30.23.0", MASCARA);
   Ipv4InterfaceContainer i_cli_1 = h_ipv4.Assign(d_cli_1);
 
-  NS_LOG_DEBUG("[Escenario] Cliente 1 conectado al switch 1 del core.");
-
-
-
+  NS_LOG_DEBUG("\n----------------------------------------------------------------------------");
+  NS_LOG_DEBUG("\n[Cliente] Cliente 1 conectado al switch 1 del core.");
 
   // [CLI-SRV]
   Ptr<Node> n_servidor = pc1_1.Get(0);     // Fuente
   Ptr<Node> n_cliente = c_cliente.Get(0);  // Sumidero
 
-  // ***********************************************************************************
-  // Cliente (sumidero)
-  uint16_t puerto = 50000;
-  Address sinkLocalAddress(InetSocketAddress(Ipv4Address::GetAny(), puerto));
-  PacketSinkHelper h_sink ("ns3::TcpSocketFactory", sinkLocalAddress);
-  ApplicationContainer a_cliente = h_sink.Install(n_cliente);
-  a_cliente.Start(Seconds (1.0));
-  a_cliente.Stop(Seconds (10.0));
+  // CLIENTE (sumidero)
+  Ptr<UdpServer> udp_client = CreateObject<UdpServer>();
+  n_cliente->AddApplication(udp_client);
+  // Obtenemos ip y port del cliente para poder conectar al servidor con el mismo
+  Ipv4Address ip_client = n_cliente->GetObject<Ipv4>()->GetAddress(1,0).GetLocal();
+  UintegerValue  port_value;
+  udp_client->GetAttribute("Port", port_value);
+  uint16_t port_client = port_value.Get();
+  NS_LOG_INFO("[Cliente]  ID: "     << n_cliente->GetId() <<
+                        "  -- IP: "   << ip_client << 
+                        " -- Port: " << port_client);
 
-  // Aplicación OnOff que envía TCP al sumidero 
-  OnOffHelper h_onoff("ns3::TcpSocketFactory", Address());
-  h_onoff.SetAttribute("OnTime", StringValue("ns3::ConstantRandomVariable[Constant=1]"));
-  h_onoff.SetAttribute("OffTime", StringValue("ns3::ConstantRandomVariable[Constant=0]"));
-  h_onoff.SetAttribute("DataRate", DataRateValue(tasaEnvioFuente));
-  h_onoff.SetAttribute("PacketSize", UintegerValue(tamPaqFuente));
+  // SERVIDOR (fuente)
+  OnOffHelper h_onoff ("ns3::UdpSocketFactory", InetSocketAddress(ip_client, port_value.Get()));
 
-  // Asociación del cliente con el servidor
-  ApplicationContainer a_servidor;
-  AddressValue remoteAddress(InetSocketAddress(n_cliente->GetObject<Ipv4L3Protocol>()->GetAddress(1, 0).GetLocal(), puerto));
-  h_onoff.SetAttribute("Remote", remoteAddress);
-  a_servidor.Add(h_onoff.Install(n_servidor));
+  h_onoff.SetConstantRate(tasaEnvioFuente, tamPaqFuente);  
+  h_onoff.SetAttribute("StopTime", TimeValue(stopTime)); 
+  Ptr<ExponentialRandomVariable> onTime = CreateObject<ExponentialRandomVariable>();
+  onTime->SetAttribute("Mean",  DoubleValue(ton.GetSeconds()));
+  h_onoff.SetAttribute("OnTime", PointerValue(onTime));
+  Ptr<ExponentialRandomVariable> offTime = CreateObject<ExponentialRandomVariable>();
+  offTime->SetAttribute("Mean",  DoubleValue(toff.GetSeconds()));
+  h_onoff.SetAttribute("OffTime", PointerValue(offTime));
+  
+  h_onoff.Install(n_servidor);
+  NS_LOG_INFO ("[Servidor] Fuente ON/OFF instanciada -- IP: " << n_servidor->GetObject<Ipv4>()->GetAddress(1,0).GetLocal());
 
-  a_servidor.Start(Seconds(1.0));
-  a_servidor.Stop(Seconds(10.0));
+  // [COLA-SERVIDOR] (fuente)
+  // Obtenemos el puntero al TCL del nodo (OJO: puede ser nulo)
+  Ptr<TrafficControlLayer> tcl = n_servidor->GetObject<TrafficControlLayer> ();
+
+  // Para cada dispositivo en el nodo 
+  for (uint32_t indice=0; indice<n_servidor->GetNDevices(); indice++)
+    {
+      Ptr<Queue<Packet>> cola_tx;
+      Ptr<QueueDisc> cola_tcl;
+
+      // Obtenemos el puntero al dispositivo
+      Ptr<NetDevice> dispo = n_servidor->GetDevice(indice);
+      NS_LOG_INFO ("[COLA-TX]  Tipo dispositivo " << indice << ": " << dispo->GetInstanceTypeId().GetName());
+
+      // Sólo si el dispositivo es CsmaNetDevice buscamos la cola
+      if ("ns3::CsmaNetDevice" == dispo->GetInstanceTypeId().GetName())
+      {
+        // Obtenemos el puntero a la cola de transmisión del dispositivo
+        // (OJO: puede ser nulo).
+        cola_tx = dispo->GetObject<CsmaNetDevice>()->GetQueue();
+        if (cola_tx)
+        {
+          cola_tx->SetMaxSize(QueueSize(TAM_COLA_TX));
+          NS_LOG_INFO ("[COLA-TX]  Cola en dispositivo " << indice << " del nodo cliente 0: " << cola_tx->GetInstanceTypeId().GetName() << "  --  TAMAÑO MAXIMO: " << cola_tx->GetMaxSize());
+        }
+        else
+          NS_LOG_INFO ("[COLA-TX]  Cola en dispositivo " << indice << " del nodo cliente 0: Ninguna");
+      }
+
+      // Si hay TCL buscamos la cola de control del dispositivo
+      if (tcl)
+      {
+        // Obtenemos el puntero a la cola (OJO: puede ser nulo)
+        // utilizando el método del TCL.
+        cola_tcl = tcl->GetRootQueueDiscOnDevice(dispo);
+      
+        if (cola_tcl) {
+          cola_tcl->SetMaxSize(QueueSize(PACKETS, TAM_COLA_TCL));
+          NS_LOG_INFO ("[COLA-TCL] Cola TCL              del nodo cliente 0: " << cola_tcl->GetInstanceTypeId().GetName () << "       --  TAMAÑO MAXIMO: " << cola_tcl->GetMaxSize());
+        }
+        else
+          NS_LOG_INFO ("[COLA-TCL] Según TCL: Sin cola");
+      }
+
+      if(cola_tx && cola_tcl) {
+        //[TRAZAS COLA TX]
+        ColaTxObservador colaTxObs (cola_tx);
+        //[TRAZAS COLA TCL]
+        ColaTclObservador colaTclObs (cola_tcl);
+      }
+    }
 
   // [TRAZAS PCAP]
   CsmaHelper h_csma_pcap;
@@ -540,8 +636,25 @@ escenario ( DataRate tasaEnvioCsma  ,
   // [TABLAS DE ENCAMINAMIENTO]
   Ipv4GlobalRoutingHelper::PopulateRoutingTables();
   NS_LOG_DEBUG("[Escenario] Se crean las tablas de reenvío.");
-  printRoutingTable(sw1_1.Get(0));
-  NS_LOG_DEBUG("\n[Escenario] ----------------------------------------------------------------------------");
+  //printRoutingTable(sw1_1.Get(0));
+  NS_LOG_DEBUG("\n----------------------------------------------------------------------------");
+
+  // [OBSERVADORES]
+  ObservadorPaquetes observadorPq (n_servidor, udp_client);
+
+  // ----------------------------------------------
+  Simulator::Stop (Time("60s"));
+  NS_LOG_INFO ("\n[SIMULACION] Inicio de la simulación en el instante: " << Simulator::Now().GetSeconds() << "s\n");
+  Simulator::Run ();
+  NS_LOG_INFO ("[SIMULACION] Fin de la simulación en el instante: " << Simulator::Now().GetSeconds() << "s\n");
+  
+  NS_LOG_LOGIC ("[RESULTADOS] Paquetes transmitidos: " << observadorPq.GetCuentaTx());
+  NS_LOG_LOGIC ("[RESULTADOS] Paquetes recibidos   : " << udp_client->GetReceived());
+  NS_LOG_LOGIC ("[RESULTADOS] Paquetes perdidos    : " << observadorPq.GetPerdidos());
+  NS_LOG_LOGIC ("[RESULTADOS] \% paquetes perdidos  : " << (observadorPq.GetPerdidos()*100)/observadorPq.GetCuentaTx() << "%" );
+  NS_LOG_LOGIC ("[RESULTADOS] Retardo medio        : " << observadorPq.RetardoMedio(). GetSeconds() << "s");
+
+  return observadorPq;
 }
 
 // ******************************
@@ -570,13 +683,16 @@ void printRoutingTable (Ptr<Node> node)
 int main (int argc, char *argv [])
 {
   // Variables por línea de comandos
-  DataRate tasaEnvioCsma ("6Mbps");
+  DataRate tasaEnvioCsma ("20Mbps");
   Time retardoCsma ("5ms");
   uint32_t mtuCsma (2000);
-  DataRate tasaEnvioP2P ("6Mbps");
+  DataRate tasaEnvioP2P ("20Mbps");
   Time retardoP2P ("5ms");
-  DataRate tasaEnvioFuente ("6Mbps");
-  uint32_t tamPaqFuente (1000);
+  DataRate tasaEnvioFuente ("20Mbps");
+  uint32_t tamPaqFuente (1357);
+  Time ton (Time("0.05s"));         
+  Time toff (Time("0.75s"));          
+  Time stopTime (Time("50s"));
 
   // Línea de comandos
   CommandLine cmd;
@@ -587,6 +703,10 @@ int main (int argc, char *argv [])
   cmd.AddValue ("retardoP2P", "Retardo de los canales P2P.", retardoP2P);
   cmd.AddValue ("tasaEnvioFuente", "Tasa de envío del servidor.", tasaEnvioFuente);
   cmd.AddValue ("tamPaqFuente", "Tamaño de los paquetes que envía el servidor.", tamPaqFuente);
+  cmd.AddValue ("ton", "Duración media del estado ON, que sigue una distribución exponenci.", ton);
+  cmd.AddValue ("toff", "Duración media del estado OFF, según una distribución exponencial.", toff);
+  cmd.AddValue ("stopTime", "Duración de la comunicació.", stopTime);  
+  cmd.Parse (argc, argv); 
   cmd.Parse (argc, argv); 
 
   // NS_LOG_INFO("[PARAMETROS] --");
@@ -596,10 +716,105 @@ int main (int argc, char *argv [])
 
   Time::SetResolution (Time::NS);  
 
-  escenario(tasaEnvioCsma, retardoCsma, mtuCsma, tasaEnvioP2P, retardoP2P, tasaEnvioFuente, tamPaqFuente); 
-  // ----------------------------------------------
-  Simulator::Stop (Time("20s"));
-  NS_LOG_INFO ("\n[SIMULACION] Inicio de la simulación en el instante: " << Simulator::Now().GetSeconds() << "s\n");
-  Simulator::Run ();
-  NS_LOG_INFO ("[SIMULACION] Fin de la simulación en el instante: " << Simulator::Now().GetSeconds() << "s\n");
+  escenario(tasaEnvioCsma, retardoCsma, mtuCsma, tasaEnvioP2P, retardoP2P, tasaEnvioFuente, tamPaqFuente, ton, toff, stopTime); 
+  
+  return 0;
+}
+
+Punto
+punto ( DataRate tasaEnvioCsma  ,
+        Time     retardoCsma    ,
+        uint32_t mtuCsma        ,
+        DataRate tasaEnvioP2P   ,
+        Time     retardoP2P     ,
+        DataRate tasaEnvioFuente,
+        uint32_t tamPaqFuente   ,
+        Time     ton            ,
+        Time     toff           ,
+        Time     stopTime       
+       )
+{
+    Average<double> ac_perdidos;
+    
+    // Simulación Z del punto j
+    for (uint32_t iteracion = 0; iteracion<ITERACIONES; iteracion++){
+        ObservadorPaquetes obs = escenario(tasaEnvioCsma, retardoCsma, mtuCsma, tasaEnvioP2P, retardoP2P, tasaEnvioFuente, tamPaqFuente, ton, toff, stopTime); 
+        ac_perdidos.Update(obs.GetPerdidos());
+        NS_LOG_DEBUG ("[GRAFICA] \tSIMULACIÓN " << iteracion+1 << " de " << ITERACIONES << " -- PQ_PERDIDOS = " << obs.GetPerdidos());
+    }
+
+    // Error 
+    double error = TSTUDENT
+            * sqrt (ac_perdidos.Var () / ac_perdidos.Count ());
+    Punto pto_curva (tasaEnvioFuente.GetBitRate()/(1000000), ac_perdidos.Mean(), error);
+    
+    return pto_curva;
+}
+
+
+Gnuplot2dDataset
+curva ( DataRate tasaEnvioCsma  ,
+        Time     retardoCsma    ,
+        uint32_t mtuCsma        ,
+        DataRate tasaEnvioP2P   ,
+        Time     retardoP2P     ,
+        DataRate tasaEnvioFuente,
+        uint32_t tamPaqFuente   ,
+        Time     ton            ,
+        Time     toff           ,
+        Time     stopTime       
+       )
+{
+    //std::string name = std::to_string(numFuentesOnOff) + " fuentes ON/OFF";
+    Gnuplot2dDataset curva;
+    curva.SetStyle (Gnuplot2dDataset::LINES_POINTS);
+    curva.SetErrorBars (Gnuplot2dDataset::Y);
+    
+    DataRate tasa_envio = tasaEnvioFuente;
+    // Punto j de la curva i
+    for (uint32_t numValores=0; numValores<NUM_PUNTOS; numValores++) {
+        Punto pto = punto(tasaEnvioCsma, retardoCsma, mtuCsma, tasaEnvioP2P, retardoP2P, tasa_envio, tamPaqFuente, ton, toff, stopTime);
+        curva.Add(pto.abscisa(), pto.ordenada(), pto.error());
+        NS_LOG_DEBUG ("[GRAFICA] \t--> PUNTO " << numValores+1 << " de " << NUM_PUNTOS << " -- TASA_FUNTE = " << tasa_envio << " (Tasa,PqPerd,error) = (" << pto.abscisa() <<", " << pto.ordenada() <<", " << pto.error() << ")");
+        NS_LOG_DEBUG ("[GRAFICA] \t------------------------------------------------------------------------------");
+        tasa_envio += 5;  // ************************************* ESTUDIARRRRRRRRR
+  }
+
+  return curva;
+}
+
+
+
+Gnuplot
+grafica( DataRate tasaEnvioCsma  ,
+         Time     retardoCsma    ,
+         uint32_t mtuCsma        ,
+         DataRate tasaEnvioP2P   ,
+         Time     retardoP2P     ,
+         DataRate tasaEnvioFuente,
+         uint32_t tamPaqFuente   ,
+         Time     ton            ,
+         Time     toff           ,
+         Time     stopTime       
+        )
+{
+  Gnuplot grafica;
+  grafica.SetTitle ("Paquetes perdidos frente a la tasa del canal");
+  grafica.SetLegend ("Tasa del canal (Mbps)", "Paquetes perdidos (packets)");
+  //grafica.SetExtra("set yrange [0:1]\nset key right top\nset xrange  [0:2100000]");
+
+  // uint32_t parametro = numFuentesOnOff;
+
+  //Curva i (total 4)
+  for (uint32_t numCurvas=0; numCurvas<NUM_CURVAS; numCurvas++){
+
+    NS_LOG_DEBUG ("[GRAFICA] ------------------------------------------------------------------------------");
+    NS_LOG_DEBUG ("[GRAFICA] CURVA " << numCurvas+1 << " de " << NUM_CURVAS);
+    Gnuplot2dDataset crv = curva(tasaEnvioCsma, retardoCsma, mtuCsma, tasaEnvioP2P, retardoP2P, tasaEnvioFuente, tamPaqFuente, ton, toff, stopTime);
+    // Añadimos la curva a la gráfica
+    grafica.AddDataset(crv);
+    // parametro += numFuentesOnOff;
+  } 
+
+  return grafica;   
 }
