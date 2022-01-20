@@ -13,7 +13,7 @@ ObservadorPaquetes::ObservadorPaquetes (Ptr<Node> emisor, Ptr<UdpServer> recepto
   retardo_acumulado.Reset();
   cuenta_tx = 0;
   cuenta_rx = 0;
-  emisor->GetApplication(0)->GetObject<OnOffApplication>()->TraceConnectWithoutContext ("Tx", MakeCallback(&ObservadorPaquetes::Transmision, this));    
+  emisor->GetApplication(0)->GetObject<UdpEchoClient>()->TraceConnectWithoutContext ("Tx", MakeCallback(&ObservadorPaquetes::Transmision, this));    
   receptor->TraceConnectWithoutContext ("Rx", MakeCallback(&ObservadorPaquetes::Recepcion, this));  
 }
 

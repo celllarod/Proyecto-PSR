@@ -17,19 +17,10 @@ ColaTxObservador::ColaTxObservador (Ptr<Queue<Packet>> cola_tx)
   this->tamColaTx = cola_tx->GetMaxSize().GetValue();
   NS_LOG_DEBUG ("[COLA-TX]  Tamaño maximo: " << this->tamColaTx);
 
-  cola_tx->TraceConnectWithoutContext ("Enqueue",
-                                        MakeCallback(&ColaTxObservador::EncolaPq,
-                                                     this));    
-  cola_tx->TraceConnectWithoutContext ("Dequeue",
-                                        MakeCallback(&ColaTxObservador::DesencolaPq,
-                                                     this));  
-  cola_tx->TraceConnectWithoutContext ("Drop",
-                                        MakeCallback(&ColaTxObservador::EliminaPq,
-                                                     this));  
-
-  /* cola_tx->TraceConnectWithoutContext ("PacketsInQueue",
-                                        MakeCallback(&ColaTxObservador::CambiaCola,
-                                                     this));   */                                                
+  // cola_tx->TraceConnectWithoutContext ("Enqueue", MakeCallback(&ColaTxObservador::EncolaPq, this));    
+  // cola_tx->TraceConnectWithoutContext ("Dequeue", MakeCallback(&ColaTxObservador::DesencolaPq, this));  
+  cola_tx->TraceConnectWithoutContext ("Drop", MakeCallback(&ColaTxObservador::EliminaPq, this));  
+  cola_tx->TraceConnectWithoutContext ("PacketsInQueue", MakeCallback(&ColaTxObservador::CambiaCola, this));                                             
 }
 
 
@@ -57,7 +48,7 @@ ColaTxObservador::DesencolaPq (Ptr<const Packet> paquete)
 void
 ColaTxObservador::EliminaPq (Ptr<const Packet> paquete)
 {
-  NS_LOG_FUNCTION (paquete);
+  // NS_LOG_FUNCTION (paquete);
   NS_LOG_DEBUG ("[COLA-TX]  Paquete eliminado.  Número de paquetes en cola: " << this->numPqEnCola << "Número de paquetes eliminados: " << this->numPqEliminados);
   this->numPqEliminados ++;
 }
@@ -66,13 +57,13 @@ ColaTxObservador::EliminaPq (Ptr<const Packet> paquete)
 void
 ColaTxObservador::CambiaCola (uint32_t oldValue, uint32_t newValue)
 {
-  NS_LOG_FUNCTION (oldValue << newValue);
+  //NS_LOG_FUNCTION (oldValue << newValue);
   if (oldValue > newValue)
-      NS_LOG_DEBUG ("[COLA-TX]  Cambia cola: " << oldValue << "  --->  " << newValue << "  (desencola)");
+      // NS_LOG_DEBUG ("[COLA-TX]  Cambia cola: " << oldValue << "  --->  " << newValue << "  (desencola)");
   if (oldValue < newValue){
     if (newValue == 100)
         NS_LOG_DEBUG ("[COLA-TX]  Cambia cola: " << oldValue << "  --->  " << newValue << "  (encola) -- ¡¡¡COLA TX LLENA!!!");
-    else
-        NS_LOG_DEBUG ("[COLA-TX]  Cambia cola: " << oldValue << "  --->  " << newValue << "  (encola)");
+    //else
+        // NS_LOG_DEBUG ("[COLA-TX]  Cambia cola: " << oldValue << "  --->  " << newValue << "  (encola)");
   }
 }

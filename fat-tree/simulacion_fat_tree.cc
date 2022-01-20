@@ -47,7 +47,7 @@
 using namespace ns3;
 
 #define MASCARA   "255.255.255.0"
-#define TAM_COLA_TX "0p"
+#define TAM_COLA_TX "15000p"
 #define TAM_COLA_TCL 0
 
 
@@ -67,15 +67,15 @@ NS_LOG_COMPONENT_DEFINE ("Fat_tree");
 // *************************
 // ** Declaración métodos **
 // *************************
-void             printRoutingTable (Ptr<Node> node);
-void             escenario         ();
-Gnuplot          grafica           (DataRate tasaEnvioCsma, Time retardoCsma, uint32_t mtuCsma, DataRate tasaEnvioP2P, Time retardoP2P,
-                                    DataRate tasaEnvioFuente, uint32_t tamPaqFuente, Time ton, Time toff, Time stopTime);
-Gnuplot2dDataset curva             (DataRate tasaEnvioCsma, Time retardoCsma, uint32_t mtuCsma, DataRate tasaEnvioP2P, Time retardoP2P,
-                                    DataRate tasaEnvioFuente, uint32_t tamPaqFuente, Time ton, Time toff, Time stopTime);
-Punto            punto             (DataRate tasaEnvioCsma, Time retardoCsma, uint32_t mtuCsma, DataRate tasaEnvioP2P, Time retardoP2P,
-                                    DataRate tasaEnvioFuente, uint32_t tamPaqFuente, Time ton, Time toff, Time stopTime);
-
+void printRoutingTable (Ptr<Node> node);
+ObservadorPaquetes escenario (DataRate tasaEnvioCsma, Time retardoCsma, uint32_t mtuCsma, DataRate tasaEnvioP2P, Time retardoP2P,
+                              DataRate tasaEnvioFuente, uint32_t tamPaqFuente, Time intervaloEnvio, uint32_t maxPq);
+Gnuplot grafica (DataRate tasaEnvioCsma, Time retardoCsma, uint32_t mtuCsma, DataRate tasaEnvioP2P, Time retardoP2P,
+                 DataRate tasaEnvioFuente, uint32_t tamPaqFuente, Time intervaloEnvio, uint32_t maxPq);
+Gnuplot2dDataset  curva (DataRate tasaEnvioCsma, Time retardoCsma, uint32_t mtuCsma, DataRate tasaEnvioP2P, Time retardoP2P,
+                         DataRate tasaEnvioFuente, uint32_t tamPaqFuente, Time intervaloEnvio, uint32_t maxPq);
+Punto punto (DataRate tasaEnvioCsma, Time retardoCsma, uint32_t mtuCsma, DataRate tasaEnvioP2P, Time retardoP2P,
+             DataRate tasaEnvioFuente, uint32_t tamPaqFuente, Time intervaloEnvio, uint32_t maxPq);
 
 // *********************************
 // ** Metodo para crear escenario **
@@ -88,9 +88,8 @@ escenario ( DataRate tasaEnvioCsma  ,
             Time     retardoP2P     ,
             DataRate tasaEnvioFuente,
             uint32_t tamPaqFuente   ,
-            Time     ton            ,
-            Time     toff           ,
-            Time     stopTime       
+            Time     intervaloEnvio ,
+            uint32_t maxPq      
           )
 { 
   Simulator::Destroy();
@@ -549,7 +548,7 @@ escenario ( DataRate tasaEnvioCsma  ,
   Ptr<Node> n_servidor = pc1_1.Get(0);     // Fuente
   Ptr<Node> n_cliente = c_cliente.Get(0);  // Sumidero
 
-  // CLIENTE (sumidero)
+  // [CLIENTE] (sumidero)
   Ptr<UdpServer> udp_client = CreateObject<UdpServer>();
   n_cliente->AddApplication(udp_client);
   // Obtenemos ip y port del cliente para poder conectar al servidor con el mismo
@@ -557,24 +556,20 @@ escenario ( DataRate tasaEnvioCsma  ,
   UintegerValue  port_value;
   udp_client->GetAttribute("Port", port_value);
   uint16_t port_client = port_value.Get();
-  NS_LOG_INFO("[Cliente]  ID: "     << n_cliente->GetId() <<
+  NS_LOG_INFO("[Cliente]   ID: "     << n_cliente->GetId() <<
                         "  -- IP: "   << ip_client << 
                         " -- Port: " << port_client);
 
-  // SERVIDOR (fuente)
-  OnOffHelper h_onoff ("ns3::UdpSocketFactory", InetSocketAddress(ip_client, port_value.Get()));
+  // [SERVIDOR] (fuente)
+  Ptr<UdpEchoClient> udp_server = CreateObject<UdpEchoClient>();
+  udp_server -> SetAttribute ("Interval", TimeValue(intervaloEnvio));
+  udp_server -> SetAttribute ("PacketSize", UintegerValue(tamPaqFuente));
+  udp_server -> SetAttribute ("MaxPackets", UintegerValue(maxPq));
 
-  h_onoff.SetConstantRate(tasaEnvioFuente, tamPaqFuente);  
-  h_onoff.SetAttribute("StopTime", TimeValue(stopTime)); 
-  Ptr<ExponentialRandomVariable> onTime = CreateObject<ExponentialRandomVariable>();
-  onTime->SetAttribute("Mean",  DoubleValue(ton.GetSeconds()));
-  h_onoff.SetAttribute("OnTime", PointerValue(onTime));
-  Ptr<ExponentialRandomVariable> offTime = CreateObject<ExponentialRandomVariable>();
-  offTime->SetAttribute("Mean",  DoubleValue(toff.GetSeconds()));
-  h_onoff.SetAttribute("OffTime", PointerValue(offTime));
-  
-  h_onoff.Install(n_servidor);
-  NS_LOG_INFO ("[Servidor] Fuente ON/OFF instanciada -- IP: " << n_servidor->GetObject<Ipv4>()->GetAddress(1,0).GetLocal());
+  n_servidor -> AddApplication(udp_server);
+  udp_server->SetRemote(ip_client, port_client);
+  NS_LOG_INFO("[Servidor]  ID: "   << n_servidor->GetId() <<
+                      "  -- IP: "   << n_servidor->GetObject<Ipv4>()->GetAddress(1,0).GetLocal());
 
   // [COLA-SERVIDOR] (fuente)
   // Obtenemos el puntero al TCL del nodo (OJO: puede ser nulo)
@@ -643,7 +638,7 @@ escenario ( DataRate tasaEnvioCsma  ,
   ObservadorPaquetes observadorPq (n_servidor, udp_client);
 
   // ----------------------------------------------
-  Simulator::Stop (Time("60s"));
+  // Simulator::Stop (Time("60s"));
   NS_LOG_INFO ("\n[SIMULACION] Inicio de la simulación en el instante: " << Simulator::Now().GetSeconds() << "s\n");
   Simulator::Run ();
   NS_LOG_INFO ("[SIMULACION] Fin de la simulación en el instante: " << Simulator::Now().GetSeconds() << "s\n");
@@ -684,15 +679,14 @@ int main (int argc, char *argv [])
 {
   // Variables por línea de comandos
   DataRate tasaEnvioCsma ("20Mbps");
-  Time retardoCsma ("5ms");
+  Time retardoCsma ("100ns");
   uint32_t mtuCsma (2000);
   DataRate tasaEnvioP2P ("20Mbps");
-  Time retardoP2P ("5ms");
+  Time retardoP2P ("10ns");
   DataRate tasaEnvioFuente ("20Mbps");
   uint32_t tamPaqFuente (1357);
-  Time ton (Time("0.05s"));         
-  Time toff (Time("0.75s"));          
-  Time stopTime (Time("50s"));
+  Time intervaloEnvio (Time("100us")); //0.0001
+  uint32_t maxPq (11579);
 
   // Línea de comandos
   CommandLine cmd;
@@ -703,9 +697,9 @@ int main (int argc, char *argv [])
   cmd.AddValue ("retardoP2P", "Retardo de los canales P2P.", retardoP2P);
   cmd.AddValue ("tasaEnvioFuente", "Tasa de envío del servidor.", tasaEnvioFuente);
   cmd.AddValue ("tamPaqFuente", "Tamaño de los paquetes que envía el servidor.", tamPaqFuente);
-  cmd.AddValue ("ton", "Duración media del estado ON, que sigue una distribución exponenci.", ton);
-  cmd.AddValue ("toff", "Duración media del estado OFF, según una distribución exponencial.", toff);
-  cmd.AddValue ("stopTime", "Duración de la comunicació.", stopTime);  
+  cmd.AddValue ("intervaloEnvio", "Intervalo entre paquetes enviados por la fuente.", intervaloEnvio);
+  cmd.AddValue ("maxPq", "Número máximo de paquetes a enviar.", maxPq);
+
   cmd.Parse (argc, argv); 
   cmd.Parse (argc, argv); 
 
@@ -716,7 +710,7 @@ int main (int argc, char *argv [])
 
   Time::SetResolution (Time::NS);  
 
-  escenario(tasaEnvioCsma, retardoCsma, mtuCsma, tasaEnvioP2P, retardoP2P, tasaEnvioFuente, tamPaqFuente, ton, toff, stopTime); 
+  escenario(tasaEnvioCsma, retardoCsma, mtuCsma, tasaEnvioP2P, retardoP2P, tasaEnvioFuente, tamPaqFuente, intervaloEnvio, maxPq); 
   
   return 0;
 }
@@ -729,16 +723,15 @@ punto ( DataRate tasaEnvioCsma  ,
         Time     retardoP2P     ,
         DataRate tasaEnvioFuente,
         uint32_t tamPaqFuente   ,
-        Time     ton            ,
-        Time     toff           ,
-        Time     stopTime       
-       )
+        Time     intervaloEnvio ,
+        uint32_t maxPq      
+      )
 {
     Average<double> ac_perdidos;
     
     // Simulación Z del punto j
     for (uint32_t iteracion = 0; iteracion<ITERACIONES; iteracion++){
-        ObservadorPaquetes obs = escenario(tasaEnvioCsma, retardoCsma, mtuCsma, tasaEnvioP2P, retardoP2P, tasaEnvioFuente, tamPaqFuente, ton, toff, stopTime); 
+        ObservadorPaquetes obs = escenario(tasaEnvioCsma, retardoCsma, mtuCsma, tasaEnvioP2P, retardoP2P, tasaEnvioFuente, tamPaqFuente, intervaloEnvio, maxPq); 
         ac_perdidos.Update(obs.GetPerdidos());
         NS_LOG_DEBUG ("[GRAFICA] \tSIMULACIÓN " << iteracion+1 << " de " << ITERACIONES << " -- PQ_PERDIDOS = " << obs.GetPerdidos());
     }
@@ -760,10 +753,9 @@ curva ( DataRate tasaEnvioCsma  ,
         Time     retardoP2P     ,
         DataRate tasaEnvioFuente,
         uint32_t tamPaqFuente   ,
-        Time     ton            ,
-        Time     toff           ,
-        Time     stopTime       
-       )
+        Time     intervaloEnvio ,
+        uint32_t maxPq      
+      )
 {
     //std::string name = std::to_string(numFuentesOnOff) + " fuentes ON/OFF";
     Gnuplot2dDataset curva;
@@ -773,7 +765,7 @@ curva ( DataRate tasaEnvioCsma  ,
     DataRate tasa_envio = tasaEnvioFuente;
     // Punto j de la curva i
     for (uint32_t numValores=0; numValores<NUM_PUNTOS; numValores++) {
-        Punto pto = punto(tasaEnvioCsma, retardoCsma, mtuCsma, tasaEnvioP2P, retardoP2P, tasa_envio, tamPaqFuente, ton, toff, stopTime);
+        Punto pto = punto(tasaEnvioCsma, retardoCsma, mtuCsma, tasaEnvioP2P, retardoP2P, tasa_envio, tamPaqFuente, intervaloEnvio, maxPq);
         curva.Add(pto.abscisa(), pto.ordenada(), pto.error());
         NS_LOG_DEBUG ("[GRAFICA] \t--> PUNTO " << numValores+1 << " de " << NUM_PUNTOS << " -- TASA_FUNTE = " << tasa_envio << " (Tasa,PqPerd,error) = (" << pto.abscisa() <<", " << pto.ordenada() <<", " << pto.error() << ")");
         NS_LOG_DEBUG ("[GRAFICA] \t------------------------------------------------------------------------------");
@@ -786,16 +778,15 @@ curva ( DataRate tasaEnvioCsma  ,
 
 
 Gnuplot
-grafica( DataRate tasaEnvioCsma  ,
-         Time     retardoCsma    ,
-         uint32_t mtuCsma        ,
-         DataRate tasaEnvioP2P   ,
-         Time     retardoP2P     ,
-         DataRate tasaEnvioFuente,
-         uint32_t tamPaqFuente   ,
-         Time     ton            ,
-         Time     toff           ,
-         Time     stopTime       
+grafica ( DataRate tasaEnvioCsma  ,
+          Time     retardoCsma    ,
+          uint32_t mtuCsma        ,
+          DataRate tasaEnvioP2P   ,
+          Time     retardoP2P     ,
+          DataRate tasaEnvioFuente,
+          uint32_t tamPaqFuente   ,
+          Time     intervaloEnvio ,
+          uint32_t maxPq      
         )
 {
   Gnuplot grafica;
@@ -810,7 +801,7 @@ grafica( DataRate tasaEnvioCsma  ,
 
     NS_LOG_DEBUG ("[GRAFICA] ------------------------------------------------------------------------------");
     NS_LOG_DEBUG ("[GRAFICA] CURVA " << numCurvas+1 << " de " << NUM_CURVAS);
-    Gnuplot2dDataset crv = curva(tasaEnvioCsma, retardoCsma, mtuCsma, tasaEnvioP2P, retardoP2P, tasaEnvioFuente, tamPaqFuente, ton, toff, stopTime);
+    Gnuplot2dDataset crv = curva(tasaEnvioCsma, retardoCsma, mtuCsma, tasaEnvioP2P, retardoP2P, tasaEnvioFuente, tamPaqFuente, intervaloEnvio, maxPq);
     // Añadimos la curva a la gráfica
     grafica.AddDataset(crv);
     // parametro += numFuentesOnOff;
