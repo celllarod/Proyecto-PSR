@@ -27,6 +27,7 @@
 #include "ns3/queue.h"
 #include "ns3/queue-disc.h"
 #include "ns3/traffic-control-layer.h"
+#include "ns3/mobility-helper.h"
 #include "colaTxObservador.h"
 #include "colaTclObservador.h"
 
@@ -747,7 +748,75 @@ escenario ( DataRate tasaEnvioCsma  ,
   ObservadorPaquetes observadorPq2 (n_servidor2, udp_cliente2);
   ObservadorPaquetes observadorPq3 (n_servidor3, udp_cliente3);
   ObservadorPaquetes observadorPq4 (n_servidor4, udp_cliente4);
-  
+
+  // [ANIMACION]
+  static double origen = 0;
+  MobilityHelper mobility;
+  mobility.SetMobilityModel ("ns3::ConstantPositionMobilityModel");
+  mobility.SetPositionAllocator ("ns3::GridPositionAllocator",
+                                  "MinX", DoubleValue (0.0),
+                                  "MinY", DoubleValue (origen),
+                                  "DeltaX", DoubleValue (2),
+                                  "DeltaY", DoubleValue (5),
+                                  "GridWidth", UintegerValue (16),
+                                  "LayoutType", StringValue ("RowFirst"));
+  mobility.Install(pc1_1);
+  mobility.Install(pc1_2);
+  mobility.Install(pc1_3);
+  mobility.Install(pc1_4);
+  mobility.Install(pc2_1);
+  mobility.Install(pc2_2);
+  mobility.Install(pc2_3);
+  mobility.Install(pc2_4);
+  mobility.Install(pc3_1);
+  mobility.Install(pc3_2);
+  mobility.Install(pc3_3);
+  mobility.Install(pc3_4);
+  mobility.Install(pc4_1);
+  mobility.Install(pc4_2);
+  mobility.Install(pc4_3);
+  mobility.Install(pc4_4);
+  MobilityHelper mobility2;
+  mobility2.SetPositionAllocator ("ns3::GridPositionAllocator",
+                                "MinX", DoubleValue (6.0),
+                                "MinY", DoubleValue (origen+5),
+                                "DeltaX", DoubleValue (2.5),
+                                "DeltaY", DoubleValue (5),
+                                "GridWidth", UintegerValue (8),
+                                "LayoutType", StringValue ("RowFirst"));
+  mobility2.Install(sw1_1);
+  mobility2.Install(sw1_2);
+  mobility2.Install(sw2_1);
+  mobility2.Install(sw2_2);
+  mobility2.Install(sw3_1);
+  mobility2.Install(sw3_2);
+  mobility2.Install(sw4_1);
+  mobility2.Install(sw4_2);
+  mobility2.Install(sw1_3);
+  mobility2.Install(sw1_4);
+  mobility2.Install(sw2_3);
+  mobility2.Install(sw2_4);
+  mobility2.Install(sw3_3);
+  mobility2.Install(sw3_4);
+  mobility2.Install(sw4_3);
+  mobility2.Install(sw4_4);
+  MobilityHelper mobility3;
+  mobility3.SetPositionAllocator ("ns3::GridPositionAllocator",
+                                "MinX", DoubleValue (12.0),
+                                "MinY", DoubleValue (origen+20),
+                                "DeltaX", DoubleValue (2.5),
+                                "DeltaY", DoubleValue (5),
+                                "GridWidth", UintegerValue (4),
+                                "LayoutType", StringValue ("RowFirst"));
+  mobility3.Install(swC1);
+  mobility3.Install(swC2);
+  mobility3.Install(swC3);
+  mobility3.Install(swC4);
+  mobility3.Install(n_cliente1);
+  mobility3.Install(n_cliente2);
+  mobility3.Install(n_cliente3);
+  mobility3.Install(n_cliente4);
+  AnimationInterface anim ("fatTree_anim.xml");
 
   // ----------------------------------------------
   // Simulator::Stop (Time("60s"));
@@ -782,8 +851,6 @@ escenario ( DataRate tasaEnvioCsma  ,
   double pq_perdidos4 = (observadorPq4.GetPerdidos()*100)/observadorPq4.GetCuentaTx();
   NS_LOG_LOGIC ("[RESULTADOS] \% paquetes perdidos  : " << pq_perdidos4 << "%" ); //<< std::setprecision(4)
   NS_LOG_LOGIC ("[RESULTADOS] Retardo medio        : " << observadorPq4.RetardoMedio(). GetSeconds() << "s");
-
-
 
   return observadorPq1;
 }

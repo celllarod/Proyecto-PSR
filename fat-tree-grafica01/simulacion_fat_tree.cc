@@ -25,7 +25,6 @@
 #include "observadorPaquetes.h"
 #include "ns3/queue-size.h"
 #include "ns3/queue.h"
-#include "ns3/mobility-helper.h"
 #include "ns3/queue-disc.h"
 #include "ns3/traffic-control-layer.h"
 #include "colaTxObservador.h"
@@ -70,7 +69,7 @@ NS_LOG_COMPONENT_DEFINE ("Fat_tree");
 // ** Declaración métodos **
 // *************************
 void printRoutingTable (Ptr<Node> node);
-vector<ObservadorPaquetes> escenario (DataRate tasaEnvioCsma, Time retardoCsma, uint32_t mtuCsma, DataRate tasaEnvioP2P, Time retardoP2P,
+double escenario (DataRate tasaEnvioCsma, Time retardoCsma, uint32_t mtuCsma, DataRate tasaEnvioP2P, Time retardoP2P,
                               DataRate tasaEnvioFuente, uint32_t tamPaqFuente, Time intervaloEnvio, uint32_t maxPq);
 Gnuplot grafica (DataRate tasaEnvioCsma, Time retardoCsma, uint32_t mtuCsma, DataRate tasaEnvioP2P, Time retardoP2P,
                  DataRate tasaEnvioFuente, uint32_t tamPaqFuente, Time intervaloEnvio, uint32_t maxPq);
@@ -79,10 +78,11 @@ Gnuplot2dDataset  curva (DataRate tasaEnvioCsma, Time retardoCsma, uint32_t mtuC
 Punto punto (DataRate tasaEnvioCsma, Time retardoCsma, uint32_t mtuCsma, DataRate tasaEnvioP2P, Time retardoP2P,
              DataRate tasaEnvioFuente, uint32_t tamPaqFuente, Time intervaloEnvio, uint32_t maxPq);
 
+
 // *********************************
 // ** Metodo para crear escenario **
 // *********************************
-vector<ObservadorPaquetes>
+double 
 escenario ( DataRate tasaEnvioCsma  ,
             Time     retardoCsma    ,
             uint32_t mtuCsma        ,
@@ -527,11 +527,6 @@ escenario ( DataRate tasaEnvioCsma  ,
 
   NS_LOG_INFO("[Escenario] Direcciones IPv4 asignadas a los equipos del pod 4.");
 
-  /* comprobaciones_ip(pc1_1, pc1_2, pc1_3, pc1_4, pc2_1, pc2_2, pc2_3, pc2_4, pc3_1, pc3_2, pc3_3, pc3_4, pc4_1, pc4_2,
-                    pc4_3, pc4_4, sw1_1, sw1_2, sw1_3, sw1_4, sw2_1, sw2_2, sw2_3, sw2_4, sw3_1, sw3_2, sw3_3, sw3_4,
-                    sw4_1, sw4_2, sw4_3, sw4_4, swC1, swC3, swC2, swC4);
-  */
-
   // ************************************** POD 1 **************************************
   // [CLIENTE]
   NodeContainer c_cliente1;
@@ -775,85 +770,11 @@ escenario ( DataRate tasaEnvioCsma  ,
   NS_LOG_INFO("\n----------------------------------------------------------------------------");
 
   // [OBSERVADORES]
-  vector<ObservadorPaquetes> obs;
   ObservadorPaquetes observadorPq1 (n_servidor1, udp_cliente1);
   ObservadorPaquetes observadorPq2 (n_servidor2, udp_cliente2);
   ObservadorPaquetes observadorPq3 (n_servidor3, udp_cliente3);
   ObservadorPaquetes observadorPq4 (n_servidor4, udp_cliente4);
-  obs.push_back(observadorPq1);
-  obs.push_back(observadorPq2);
-  obs.push_back(observadorPq3);
-  obs.push_back(observadorPq4);
-
-  // [ANIMACION]
-  static double origen = 0;
-  MobilityHelper mobility;
-  mobility.SetMobilityModel ("ns3::ConstantPositionMobilityModel");
-  mobility.SetPositionAllocator ("ns3::GridPositionAllocator",
-                                  "MinX", DoubleValue (0.0),
-                                  "MinY", DoubleValue (origen),
-                                  "DeltaX", DoubleValue (2),
-                                  "DeltaY", DoubleValue (5),
-                                  "GridWidth", UintegerValue (16),
-                                  "LayoutType", StringValue ("RowFirst"));
-  mobility.Install(pc1_1);
-  mobility.Install(pc1_2);
-  mobility.Install(pc1_3);
-  mobility.Install(pc1_4);
-  mobility.Install(pc2_1);
-  mobility.Install(pc2_2);
-  mobility.Install(pc2_3);
-  mobility.Install(pc2_4);
-  mobility.Install(pc3_1);
-  mobility.Install(pc3_2);
-  mobility.Install(pc3_3);
-  mobility.Install(pc3_4);
-  mobility.Install(pc4_1);
-  mobility.Install(pc4_2);
-  mobility.Install(pc4_3);
-  mobility.Install(pc4_4);
-  MobilityHelper mobility2;
-  mobility2.SetPositionAllocator ("ns3::GridPositionAllocator",
-                                "MinX", DoubleValue (6.0),
-                                "MinY", DoubleValue (origen+5),
-                                "DeltaX", DoubleValue (2.5),
-                                "DeltaY", DoubleValue (5),
-                                "GridWidth", UintegerValue (8),
-                                "LayoutType", StringValue ("RowFirst"));
-  mobility2.Install(sw1_1);
-  mobility2.Install(sw1_2);
-  mobility2.Install(sw2_1);
-  mobility2.Install(sw2_2);
-  mobility2.Install(sw3_1);
-  mobility2.Install(sw3_2);
-  mobility2.Install(sw4_1);
-  mobility2.Install(sw4_2);
-  mobility2.Install(sw1_3);
-  mobility2.Install(sw1_4);
-  mobility2.Install(sw2_3);
-  mobility2.Install(sw2_4);
-  mobility2.Install(sw3_3);
-  mobility2.Install(sw3_4);
-  mobility2.Install(sw4_3);
-  mobility2.Install(sw4_4);
-  MobilityHelper mobility3;
-  mobility3.SetPositionAllocator ("ns3::GridPositionAllocator",
-                                "MinX", DoubleValue (12.0),
-                                "MinY", DoubleValue (origen+20),
-                                "DeltaX", DoubleValue (2.5),
-                                "DeltaY", DoubleValue (5),
-                                "GridWidth", UintegerValue (4),
-                                "LayoutType", StringValue ("RowFirst"));
-  mobility3.Install(swC1);
-  mobility3.Install(swC2);
-  mobility3.Install(swC3);
-  mobility3.Install(swC4);
-  mobility3.Install(n_cliente1);
-  mobility3.Install(n_cliente2);
-  mobility3.Install(n_cliente3);
-  mobility3.Install(n_cliente4);
-  AnimationInterface anim ("fatTree_anim.xml");
-
+ 
   // ----------------------------------------------
   // Simulator::Stop (Time("60s"));
   NS_LOG_INFO ("\n[SIMULACION] Inicio de la simulación en el instante: " << Simulator::Now().GetSeconds() << "s\n");
@@ -888,7 +809,12 @@ escenario ( DataRate tasaEnvioCsma  ,
   NS_LOG_LOGIC ("[RESULTADOS] \% paquetes perdidos  : " << pq_perdidos4 << "%" ); //<< std::setprecision(4)
   NS_LOG_LOGIC ("[RESULTADOS] Retardo medio        : " << observadorPq4.RetardoMedio(). GetSeconds() << "s");
 
-  return obs;
+
+  NS_LOG_LOGIC("\n-------------------------------------------------------------------------------"); 
+  double media_pq_perdidos = (observadorPq1.GetPerdidos() + observadorPq2.GetPerdidos() + observadorPq3.GetPerdidos() +observadorPq4.GetPerdidos())/4;
+  
+
+  return media_pq_perdidos;
 }
 
 // ******************************
@@ -974,16 +900,12 @@ punto ( DataRate tasaEnvioCsma  ,
     
     // Simulación Z del punto j
     for (uint32_t iteracion = 0; iteracion<ITERACIONES; iteracion++){
-        vector<ObservadorPaquetes> obs = escenario(tasaEnvioCsma, retardoCsma, mtuCsma, tasaEnvioP2P, retardoP2P, tasaEnvioFuente, tamPaqFuente, intervaloEnvio, maxPq); 
-        for (uint32_t i=0; i<obs.size(); i++){
-          ac_perdidos.Update(obs[i].GetPerdidos());
-          
-          NS_LOG_DEBUG ("[GRAFICA] \tSIMULACIÓN " << iteracion+1 << " de " << ITERACIONES << " -- PQ_PERDIDOS (C" << i << ") = " << obs[i].GetPerdidos());
-        }
+        double pq_perdidos = escenario(tasaEnvioCsma, retardoCsma, mtuCsma, tasaEnvioP2P, retardoP2P, tasaEnvioFuente, tamPaqFuente, intervaloEnvio, maxPq);   
+        NS_LOG_DEBUG ("[GRAFICA] \tSIMULACIÓN " << iteracion+1 << " de " << ITERACIONES << " -- PQ_PERDIDOS = " << pq_perdidos);   
+        ac_perdidos.Update(pq_perdidos);
     }
     // Error 
-    double error = TSTUDENT
-            * sqrt (ac_perdidos.Var() / ac_perdidos.Count());
+    double error = TSTUDENT * sqrt (ac_perdidos.Var() / ac_perdidos.Count());
     Punto pto_curva (tasaEnvioCsma.GetBitRate(), ac_perdidos.Mean(), error);
     
     return pto_curva;
