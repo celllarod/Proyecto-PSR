@@ -701,7 +701,7 @@ int main (int argc, char *argv [])
   Gnuplot dibujo =  grafica(tasaEnvioCsma, retardoCsma, mtuCsma, tasaEnvioP2P, retardoP2P, tasaEnvioFuente, tamPaqFuente, intervaloEnvio, maxPq); 
 
   // Generamos los ficheros con la gráfica
-  std::ofstream fichero ("grafica02.plt");
+  std::ofstream fichero ("grafica02-fat-tree.plt");
   dibujo.GenerateOutput(fichero);
   fichero << "pause -1" << std::endl;
   fichero.close ();

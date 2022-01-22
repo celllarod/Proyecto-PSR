@@ -711,7 +711,7 @@ int main (int argc, char *argv [])
   Gnuplot dibujo =  grafica(tasaEnvioCsma, retardoCsma, mtuCsma, tasaEnvioP2P, retardoP2P, tasaEnvioFuente, tamPaqFuente, intervaloEnvio, maxPq); 
 
   // Generamos los ficheros con la gráfica
-  std::ofstream fichero ("grafica03.plt");
+  std::ofstream fichero ("grafica03-fat-tree.plt");
   dibujo.GenerateOutput(fichero);
   fichero << "pause -1" << std::endl;
   fichero.close ();
@@ -797,7 +797,7 @@ grafica ( DataRate tasaEnvioCsma  ,
         )
 {
   Gnuplot grafica;
-  grafica.SetTitle ("Tiempo para que se cargue un 10% de un video de 5 minutos frente a la tasa del canal");
+  grafica.SetTitle ("Tiempo para que se cargue un 10% de un video de 5 minutos frente a la tasa del canal simulando una caida en el enlace entre el sw1 y el sw3 del POD1");
   grafica.SetLegend ("Tasa del canal (Mbps)", "Tiempo (ms)");
 
   //Curva i (total 1)
