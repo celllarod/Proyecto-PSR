@@ -53,12 +53,14 @@ using std::vector;
 
 
 // ****
-#define NUM_PUNTOS 8
+#define NUM_PUNTOS 8 //10
 #define NUM_CURVAS 1
-#define ITERACIONES 5
+#define ITERACIONES 5 //15
 // Para 30 muestras y un 95% de certidumbre (0.025 -- 30-1 --> 2.0452)
 // Para 5 muestras y un 95% de certidumbre (0.025 -- 5-1 --> 2.7765)
-#define TSTUDENT 2.7765
+// Para 15 muestras y un 95% de certidumbre (0.025 -- 15-1 --> 2.1448)
+
+#define TSTUDENT 2.7765 //2.1448
 
 // ****
 
@@ -69,7 +71,7 @@ NS_LOG_COMPONENT_DEFINE ("Fat_tree");
 // ** Declaración métodos **
 // *************************
 void printRoutingTable (Ptr<Node> node);
-double escenario (DataRate tasaEnvioCsma, Time retardoCsma, uint32_t mtuCsma, DataRate tasaEnvioP2P, Time retardoP2P,
+ObservadorPaquetes escenario (DataRate tasaEnvioCsma, Time retardoCsma, uint32_t mtuCsma, DataRate tasaEnvioP2P, Time retardoP2P,
                               DataRate tasaEnvioFuente, uint32_t tamPaqFuente, Time intervaloEnvio, uint32_t maxPq);
 Gnuplot grafica (DataRate tasaEnvioCsma, Time retardoCsma, uint32_t mtuCsma, DataRate tasaEnvioP2P, Time retardoP2P,
                  DataRate tasaEnvioFuente, uint32_t tamPaqFuente, Time intervaloEnvio, uint32_t maxPq);
@@ -82,7 +84,7 @@ Punto punto (DataRate tasaEnvioCsma, Time retardoCsma, uint32_t mtuCsma, DataRat
 // *********************************
 // ** Metodo para crear escenario **
 // *********************************
-double 
+ObservadorPaquetes 
 escenario ( DataRate tasaEnvioCsma  ,
             Time     retardoCsma    ,
             uint32_t mtuCsma        ,
@@ -569,132 +571,6 @@ escenario ( DataRate tasaEnvioCsma  ,
   NS_LOG_INFO("[Servidor_1]  ID: "   << n_servidor1->GetId() <<
                       "  -- IP: "   << n_servidor1->GetObject<Ipv4>()->GetAddress(1,0).GetLocal());
 
-  // ************************************** POD 2 **************************************
-  // [CLIENTE]
-  NodeContainer c_cliente2;
-  c_cliente2.Create(1);
-
-  h_pila.Install(c_cliente2);
-  NodeContainer n_cli_2 = NodeContainer (c_cliente2, swC2);
-  NetDeviceContainer d_cli_2 = h_csma.Install(n_cli_2);
-
-  h_ipv4.SetBase("78.30.24.0", MASCARA);
-  Ipv4InterfaceContainer i_cli_2 = h_ipv4.Assign(d_cli_2);
-
-  NS_LOG_INFO("\n----------------------------------------------------------------------------");
-  NS_LOG_INFO("\n[Cliente_2] Cliente 2 conectado al switch 2 del core.");
-
-  // [CLI-SRV]
-  Ptr<Node> n_servidor2 = pc2_1.Get(0);     // Fuente
-  Ptr<Node> n_cliente2 = c_cliente2.Get(0);  // Sumidero
-
-  // [CLIENTE] (sumidero)
-  Ptr<UdpServer> udp_cliente2 = CreateObject<UdpServer>();
-  n_cliente2->AddApplication(udp_cliente2);
-  // Obtenemos ip y port del cliente para poder conectar al servidor con el mismo
-  Ipv4Address ip_cliente2 = n_cliente2->GetObject<Ipv4>()->GetAddress(1,0).GetLocal();
-  UintegerValue  port_value2;
-  udp_cliente2->GetAttribute("Port", port_value2);
-  uint16_t port_cliente2 = port_value2.Get();
-  NS_LOG_INFO("[Cliente_2]   ID: "     << n_cliente2->GetId() <<
-                        "  -- IP: "   << ip_cliente2 << 
-                        " -- Port: " << port_cliente2);
-
-  // [SERVIDOR] (fuente)
-  Ptr<UdpEchoClient> udp_servidor2 = CreateObject<UdpEchoClient>();
-  udp_servidor2 -> SetAttribute ("Interval", TimeValue(intervaloEnvio));
-  udp_servidor2 -> SetAttribute ("PacketSize", UintegerValue(tamPaqFuente));
-  udp_servidor2 -> SetAttribute ("MaxPackets", UintegerValue(maxPq));
-
-  n_servidor2 -> AddApplication(udp_servidor2);
-  udp_servidor2->SetRemote(ip_cliente2, port_cliente2);
-  NS_LOG_INFO("[Servidor_2]  ID: "   << n_servidor2->GetId() <<
-                      "  -- IP: "   << n_servidor2->GetObject<Ipv4>()->GetAddress(1,0).GetLocal());
-
-  // ************************************** POD 3 **************************************
-  // [CLIENTE]
-  NodeContainer c_cliente3;
-  c_cliente3.Create(1);
-
-  h_pila.Install(c_cliente3);
-  NodeContainer n_cli_3 = NodeContainer (c_cliente3, swC3);
-  NetDeviceContainer d_cli_3 = h_csma.Install(n_cli_3);
-
-  h_ipv4.SetBase("78.30.25.0", MASCARA);
-  Ipv4InterfaceContainer i_cli_3 = h_ipv4.Assign(d_cli_3);
-
-  NS_LOG_INFO("\n----------------------------------------------------------------------------");
-  NS_LOG_INFO("\n[Cliente_3] Cliente 3 conectado al switch 3 del core.");
-
-  // [CLI-SRV]
-  Ptr<Node> n_servidor3 = pc3_1.Get(0);     // Fuente
-  Ptr<Node> n_cliente3 = c_cliente3.Get(0);  // Sumidero
-
-  // [CLIENTE] (sumidero)
-  Ptr<UdpServer> udp_cliente3 = CreateObject<UdpServer>();
-  n_cliente3->AddApplication(udp_cliente3);
-  // Obtenemos ip y port del cliente para poder conectar al servidor con el mismo
-  Ipv4Address ip_cliente3 = n_cliente3->GetObject<Ipv4>()->GetAddress(1,0).GetLocal();
-  UintegerValue  port_value3;
-  udp_cliente3->GetAttribute("Port", port_value3);
-  uint16_t port_cliente3 = port_value3.Get();
-  NS_LOG_INFO("[Cliente_3]   ID: "     << n_cliente3->GetId() <<
-                        "  -- IP: "   << ip_cliente3 << 
-                        " -- Port: " << port_cliente3);
-
-  // [SERVIDOR] (fuente)
-  Ptr<UdpEchoClient> udp_servidor3 = CreateObject<UdpEchoClient>();
-  udp_servidor3 -> SetAttribute ("Interval", TimeValue(intervaloEnvio));
-  udp_servidor3 -> SetAttribute ("PacketSize", UintegerValue(tamPaqFuente));
-  udp_servidor3 -> SetAttribute ("MaxPackets", UintegerValue(maxPq));
-
-  n_servidor3 -> AddApplication(udp_servidor3);
-  udp_servidor3->SetRemote(ip_cliente3, port_cliente3);
-  NS_LOG_INFO("[Servidor_3]  ID: "   << n_servidor3->GetId() <<
-                      "  -- IP: "   << n_servidor3->GetObject<Ipv4>()->GetAddress(1,0).GetLocal());
-
-  // ************************************** POD 4 **************************************
-  // [CLIENTE]
-  NodeContainer c_cliente4;
-  c_cliente4.Create(1);
-
-  h_pila.Install(c_cliente4);
-  NodeContainer n_cli_4 = NodeContainer (c_cliente4, swC4);
-  NetDeviceContainer d_cli_4 = h_csma.Install(n_cli_4);
-
-  h_ipv4.SetBase("78.30.26.0", MASCARA);
-  Ipv4InterfaceContainer i_cli_4 = h_ipv4.Assign(d_cli_4);
-
-  NS_LOG_INFO("\n----------------------------------------------------------------------------");
-  NS_LOG_INFO("\n[Cliente_4] Cliente 4 conectado al switch 4 del core.");
-
-  // [CLI-SRV]
-  Ptr<Node> n_servidor4 = pc4_1.Get(0);     // Fuente
-  Ptr<Node> n_cliente4 = c_cliente4.Get(0);  // Sumidero
-
-  // [CLIENTE] (sumidero)
-  Ptr<UdpServer> udp_cliente4 = CreateObject<UdpServer>();
-  n_cliente4->AddApplication(udp_cliente4);
-  // Obtenemos ip y port del cliente para poder conectar al servidor con el mismo
-  Ipv4Address ip_cliente4 = n_cliente4->GetObject<Ipv4>()->GetAddress(1,0).GetLocal();
-  UintegerValue  port_value4;
-  udp_cliente4->GetAttribute("Port", port_value4);
-  uint16_t port_cliente4 = port_value4.Get();
-  NS_LOG_INFO("[Cliente_4]   ID: "     << n_cliente4->GetId() <<
-                        "  -- IP: "   << ip_cliente4 << 
-                        " -- Port: " << port_cliente4);
-
-  // [SERVIDOR] (fuente)
-  Ptr<UdpEchoClient> udp_servidor4 = CreateObject<UdpEchoClient>();
-  udp_servidor4 -> SetAttribute ("Interval", TimeValue(intervaloEnvio));
-  udp_servidor4 -> SetAttribute ("PacketSize", UintegerValue(tamPaqFuente));
-  udp_servidor4 -> SetAttribute ("MaxPackets", UintegerValue(maxPq));
-
-  n_servidor4 -> AddApplication(udp_servidor4);
-  udp_servidor4->SetRemote(ip_cliente4, port_cliente4);
-  NS_LOG_INFO("[Servidor_4]  ID: "   << n_servidor4->GetId() <<
-                      "  -- IP: "   << n_servidor4->GetObject<Ipv4>()->GetAddress(1,0).GetLocal());
-
   // [COLA-SERVIDOR] (fuente)
   NS_LOG_INFO("\n----------------------------------------------------------------------------");
   // Obtenemos el puntero al TCL del nodo (OJO: puede ser nulo)
@@ -752,15 +628,6 @@ escenario ( DataRate tasaEnvioCsma  ,
   CsmaHelper h_csma_pcap;
   h_csma_pcap.EnablePcap("fuente1", n_servidor1->GetDevice(1));
   h_csma_pcap.EnablePcap("sumidero1", n_cliente1->GetDevice(1));
-
-  h_csma_pcap.EnablePcap("fuente2", n_servidor2->GetDevice(1));
-  h_csma_pcap.EnablePcap("sumidero2", n_cliente2->GetDevice(1));
-
-  h_csma_pcap.EnablePcap("fuente3", n_servidor3->GetDevice(1));
-  h_csma_pcap.EnablePcap("sumidero3", n_cliente3->GetDevice(1));
-
-  h_csma_pcap.EnablePcap("fuente4", n_servidor4->GetDevice(1));
-  h_csma_pcap.EnablePcap("sumidero4", n_cliente4->GetDevice(1));
   
   // [TABLAS DE ENCAMINAMIENTO]
   NS_LOG_INFO("\n----------------------------------------------------------------------------");
@@ -771,50 +638,21 @@ escenario ( DataRate tasaEnvioCsma  ,
 
   // [OBSERVADORES]
   ObservadorPaquetes observadorPq1 (n_servidor1, udp_cliente1);
-  ObservadorPaquetes observadorPq2 (n_servidor2, udp_cliente2);
-  ObservadorPaquetes observadorPq3 (n_servidor3, udp_cliente3);
-  ObservadorPaquetes observadorPq4 (n_servidor4, udp_cliente4);
  
   // ----------------------------------------------
   // Simulator::Stop (Time("60s"));
   NS_LOG_INFO ("\n[SIMULACION] Inicio de la simulación en el instante: " << Simulator::Now().GetSeconds() << "s\n");
   Simulator::Run ();
   NS_LOG_INFO ("[SIMULACION] Fin de la simulación en el instante: " << Simulator::Now().GetSeconds() << "s\n");
-  NS_LOG_LOGIC("\n-----------[1]-----------------------------------------------------------------");
+  NS_LOG_LOGIC("\n----------------------------------------------------------------------------");
   NS_LOG_LOGIC ("[RESULTADOS] Paquetes transmitidos: " << observadorPq1.GetCuentaTx());
   NS_LOG_LOGIC ("[RESULTADOS] Paquetes recibidos   : " << udp_cliente1->GetReceived());
   NS_LOG_LOGIC ("[RESULTADOS] Paquetes perdidos    : " << observadorPq1.GetPerdidos());
   double pq_perdidos1 = (observadorPq1.GetPerdidos()*100)/observadorPq1.GetCuentaTx();
   NS_LOG_LOGIC ("[RESULTADOS] \% paquetes perdidos  : " << pq_perdidos1 << "%" ); //<< std::setprecision(4)
   NS_LOG_LOGIC ("[RESULTADOS] Retardo medio        : " << observadorPq1.RetardoMedio(). GetSeconds() << "s");
-  NS_LOG_LOGIC("\n-----------[2]-----------------------------------------------------------------");
-  NS_LOG_LOGIC ("[RESULTADOS] Paquetes transmitidos: " << observadorPq2.GetCuentaTx());
-  NS_LOG_LOGIC ("[RESULTADOS] Paquetes recibidos   : " << udp_cliente2->GetReceived());
-  NS_LOG_LOGIC ("[RESULTADOS] Paquetes perdidos    : " << observadorPq2.GetPerdidos());
-  double pq_perdidos2 = (observadorPq2.GetPerdidos()*100)/observadorPq2.GetCuentaTx();
-  NS_LOG_LOGIC ("[RESULTADOS] \% paquetes perdidos  : " << pq_perdidos2 << "%" ); //<< std::setprecision(4)
-  NS_LOG_LOGIC ("[RESULTADOS] Retardo medio        : " << observadorPq2.RetardoMedio(). GetSeconds() << "s");
-  NS_LOG_LOGIC("\n-----------[3]-----------------------------------------------------------------");
-  NS_LOG_LOGIC ("[RESULTADOS] Paquetes transmitidos: " << observadorPq3.GetCuentaTx());
-  NS_LOG_LOGIC ("[RESULTADOS] Paquetes recibidos   : " << udp_cliente3->GetReceived());
-  NS_LOG_LOGIC ("[RESULTADOS] Paquetes perdidos    : " << observadorPq3.GetPerdidos());
-  double pq_perdidos3 = (observadorPq3.GetPerdidos()*100)/observadorPq3.GetCuentaTx();
-  NS_LOG_LOGIC ("[RESULTADOS] \% paquetes perdidos  : " << pq_perdidos3 << "%" ); //<< std::setprecision(4)
-  NS_LOG_LOGIC ("[RESULTADOS] Retardo medio        : " << observadorPq3.RetardoMedio(). GetSeconds() << "s");
-  NS_LOG_LOGIC("\n-----------[4]-----------------------------------------------------------------");  
-  NS_LOG_LOGIC ("[RESULTADOS] Paquetes transmitidos: " << observadorPq4.GetCuentaTx());
-  NS_LOG_LOGIC ("[RESULTADOS] Paquetes recibidos   : " << udp_cliente4->GetReceived());
-  NS_LOG_LOGIC ("[RESULTADOS] Paquetes perdidos    : " << observadorPq4.GetPerdidos());
-  double pq_perdidos4 = (observadorPq4.GetPerdidos()*100)/observadorPq4.GetCuentaTx();
-  NS_LOG_LOGIC ("[RESULTADOS] \% paquetes perdidos  : " << pq_perdidos4 << "%" ); //<< std::setprecision(4)
-  NS_LOG_LOGIC ("[RESULTADOS] Retardo medio        : " << observadorPq4.RetardoMedio(). GetSeconds() << "s");
 
-
-  NS_LOG_LOGIC("\n-------------------------------------------------------------------------------"); 
-  double media_pq_perdidos = (observadorPq1.GetPerdidos() + observadorPq2.GetPerdidos() + observadorPq3.GetPerdidos() +observadorPq4.GetPerdidos())/4;
-  
-
-  return media_pq_perdidos;
+  return observadorPq1;
 }
 
 // ******************************
@@ -900,13 +738,14 @@ punto ( DataRate tasaEnvioCsma  ,
     
     // Simulación Z del punto j
     for (uint32_t iteracion = 0; iteracion<ITERACIONES; iteracion++){
-        double pq_perdidos = escenario(tasaEnvioCsma, retardoCsma, mtuCsma, tasaEnvioP2P, retardoP2P, tasaEnvioFuente, tamPaqFuente, intervaloEnvio, maxPq);   
-        NS_LOG_DEBUG ("[GRAFICA] \tSIMULACIÓN " << iteracion+1 << " de " << ITERACIONES << " -- PQ_PERDIDOS = " << pq_perdidos);   
-        ac_perdidos.Update(pq_perdidos);
+        ObservadorPaquetes obs = escenario(tasaEnvioCsma, retardoCsma, mtuCsma, tasaEnvioP2P, retardoP2P, tasaEnvioFuente, tamPaqFuente, intervaloEnvio, maxPq);   
+        NS_LOG_DEBUG ("[GRAFICA] \tSIMULACIÓN " << iteracion+1 << " de " << ITERACIONES << " -- PQ_PERDIDOS = " << obs.GetPerdidos() << " -- \% PERDIDOS = " << (100*obs.GetPerdidos()/obs.GetCuentaTx()) );   
+        ac_perdidos.Update((100*obs.GetPerdidos()/obs.GetCuentaTx()));
     }
-    // Error 
+
+    // Error
     double error = TSTUDENT * sqrt (ac_perdidos.Var() / ac_perdidos.Count());
-    Punto pto_curva (tasaEnvioCsma.GetBitRate(), ac_perdidos.Mean(), error);
+    Punto pto_curva (tasaEnvioCsma.GetBitRate()/10e6, ac_perdidos.Mean(), error);
     
     return pto_curva;
 }
@@ -924,8 +763,7 @@ curva ( DataRate tasaEnvioCsma  ,
         uint32_t maxPq      
       )
 {
-    //std::string name = std::to_string(numFuentesOnOff) + " fuentes ON/OFF";
-    Gnuplot2dDataset curva;
+    Gnuplot2dDataset curva (" ");
     curva.SetStyle (Gnuplot2dDataset::LINES_POINTS);
     curva.SetErrorBars (Gnuplot2dDataset::Y);
     
@@ -943,7 +781,6 @@ curva ( DataRate tasaEnvioCsma  ,
 }
 
 
-
 Gnuplot
 grafica ( DataRate tasaEnvioCsma  ,
           Time     retardoCsma    ,
@@ -957,11 +794,8 @@ grafica ( DataRate tasaEnvioCsma  ,
         )
 {
   Gnuplot grafica;
-  grafica.SetTitle ("Paquetes perdidos frente a la tasa del canal");
-  grafica.SetLegend ("Tasa del canal (Mbps)", "Paquetes perdidos (packets)");
-  //grafica.SetExtra("set yrange [0:1]\nset key right top\nset xrange  [0:2100000]");
-
-  // uint32_t parametro = numFuentesOnOff;
+  grafica.SetTitle (" % Paquetes perdidos frente a la tasa del canal");
+  grafica.SetLegend ("Tasa del canal (Mbps)", "Paquetes perdidos (%)");
 
   //Curva i (total 4)
   for (uint32_t numCurvas=0; numCurvas<NUM_CURVAS; numCurvas++){
