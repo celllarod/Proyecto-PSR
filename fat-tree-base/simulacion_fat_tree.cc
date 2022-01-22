@@ -34,9 +34,8 @@
 using namespace ns3;
 
 #define MASCARA   "255.255.255.0"
-#define TAM_COLA_TX "15000p"
-#define TAM_COLA_TCL 0
-
+#define TAM_COLA_TX "100p"
+#define TAM_COLA_TCL 1000
 
 NS_LOG_COMPONENT_DEFINE ("Fat_tree");
 
@@ -111,7 +110,7 @@ escenario ( DataRate tasaEnvioCsma  ,
   swC3.Create(1);
   swC4.Create(1);
 
-  NS_LOG_DEBUG("[Escenario] Nodos de todos los elementos creados.");
+  NS_LOG_INFO("[Escenario] Nodos de todos los elementos creados.");
 
   // [HELPERs]
   // Helper para la instalación de las pilas de protocolos
@@ -122,7 +121,7 @@ escenario ( DataRate tasaEnvioCsma  ,
   h_pila.Install(swC2);
   h_pila.Install(swC3);
   h_pila.Install(swC4);
-  NS_LOG_DEBUG("[Escenario] Pila de los switches del Core instanciada.");
+  NS_LOG_INFO("[Escenario] Pila de los switches del Core instanciada.");
 
   // Helper para la creación de los enlaces csma entre los equipos finales y los switches del lower layer
   CsmaHelper h_csma;
@@ -139,7 +138,7 @@ escenario ( DataRate tasaEnvioCsma  ,
   Ipv4AddressHelper h_ipv4;
 
   // ************************************** POD 1 **************************************
-  NS_LOG_DEBUG("\n[Escenario] POD 1 ----------------------------------------------------------------------");
+  NS_LOG_INFO("\n[Escenario] POD 1 ----------------------------------------------------------------------");
   // [PILA DE PROTOCOLOS] Pod 1
   h_pila.Install(pc1_1);
   h_pila.Install(pc1_2);
@@ -149,7 +148,7 @@ escenario ( DataRate tasaEnvioCsma  ,
   h_pila.Install(sw1_2);
   h_pila.Install(sw1_3);
   h_pila.Install(sw1_4);
-  NS_LOG_DEBUG("[Escenario] Pila de los switches y equipos finales del pod 1 instanciada.");
+  NS_LOG_INFO("[Escenario] Pila de los switches y equipos finales del pod 1 instanciada.");
 
   // [ENLACES] Pod 1
   NodeContainer n1_1 = NodeContainer (pc1_1,sw1_1);
@@ -172,21 +171,21 @@ escenario ( DataRate tasaEnvioCsma  ,
   NetDeviceContainer d1_2 = h_csma.Install(n1_2);
   NetDeviceContainer d1_3 = h_csma.Install(n1_3);
   NetDeviceContainer d1_4 = h_csma.Install(n1_4);
-  NS_LOG_DEBUG("[Escenario] Enlaces CSMA entre los equipos finales y los switches del lower layer creados.");
+  NS_LOG_INFO("[Escenario] Enlaces CSMA entre los equipos finales y los switches del lower layer creados.");
 
   // Enlace P2P entre los switches del lower layer y los switches del upper layer
   NetDeviceContainer d1_13 = h_p2p.Install(n1_13);
   NetDeviceContainer d1_14 = h_p2p.Install(n1_14);
   NetDeviceContainer d1_23 = h_p2p.Install(n1_23);
   NetDeviceContainer d1_24 = h_p2p.Install(n1_24);
-  NS_LOG_DEBUG("[Escenario] Enlaces P2P entre los switches del lower layer y los switches del upper layer creados.");
+  NS_LOG_INFO("[Escenario] Enlaces P2P entre los switches del lower layer y los switches del upper layer creados.");
 
   // Enlace P2P entre los switches del upper layer y los switches del Core
   NetDeviceContainer d1_3c1 = h_p2p.Install(n1_3c1);
   NetDeviceContainer d1_3c2 = h_p2p.Install(n1_3c2);
   NetDeviceContainer d1_4c3 = h_p2p.Install(n1_4c3);
   NetDeviceContainer d1_4c4 = h_p2p.Install(n1_4c4);
-  NS_LOG_DEBUG("[Escenario] Enlaces P2P entre los switches del upper layer y los switches del Core creados.");
+  NS_LOG_INFO("[Escenario] Enlaces P2P entre los switches del upper layer y los switches del Core creados.");
 
   // [DIRECCIONAMIENTO IP] Pod 1 
   h_ipv4.SetBase("10.1.0.0", MASCARA);
@@ -225,10 +224,10 @@ escenario ( DataRate tasaEnvioCsma  ,
   h_ipv4.SetBase("10.1.11.0", MASCARA);
   Ipv4InterfaceContainer i1_4c4 = h_ipv4.Assign(d1_4c4);
 
-  NS_LOG_DEBUG("[Escenario] Direcciones IPv4 asignadas a los equipos del pod 1.");
+  NS_LOG_INFO("[Escenario] Direcciones IPv4 asignadas a los equipos del pod 1.");
 
   // ************************************** POD 2 **************************************
-  NS_LOG_DEBUG("\n[Escenario] POD 2 ----------------------------------------------------------------------");
+  NS_LOG_INFO("\n[Escenario] POD 2 ----------------------------------------------------------------------");
   // [PILA DE PROTOCOLOS] Pod 2
   h_pila.Install(pc2_1);
   h_pila.Install(pc2_2);
@@ -238,7 +237,7 @@ escenario ( DataRate tasaEnvioCsma  ,
   h_pila.Install(sw2_2);
   h_pila.Install(sw2_3);
   h_pila.Install(sw2_4);
-  NS_LOG_DEBUG("[Escenario] Pila de los switches y equipos finales del pod 2 instanciada.");
+  NS_LOG_INFO("[Escenario] Pila de los switches y equipos finales del pod 2 instanciada.");
 
   // [ENLACES] Pod 2
   NodeContainer n2_1 = NodeContainer (pc2_1,sw2_1);
@@ -261,21 +260,21 @@ escenario ( DataRate tasaEnvioCsma  ,
   NetDeviceContainer d2_2 = h_csma.Install(n2_2);
   NetDeviceContainer d2_3 = h_csma.Install(n2_3);
   NetDeviceContainer d2_4 = h_csma.Install(n2_4);
-  NS_LOG_DEBUG("[Escenario] Enlaces CSMA entre los equipos finales y los switches del lower layer creados.");
+  NS_LOG_INFO("[Escenario] Enlaces CSMA entre los equipos finales y los switches del lower layer creados.");
 
   // Enlace P2P entre los switches del lower layer y los switches del upper layer
   NetDeviceContainer d2_13 = h_p2p.Install(n2_13);
   NetDeviceContainer d2_14 = h_p2p.Install(n2_14);
   NetDeviceContainer d2_23 = h_p2p.Install(n2_23);
   NetDeviceContainer d2_24 = h_p2p.Install(n2_24);
-  NS_LOG_DEBUG("[Escenario] Enlaces P2P entre los switches del lower layer y los switches del upper layer creados.");
+  NS_LOG_INFO("[Escenario] Enlaces P2P entre los switches del lower layer y los switches del upper layer creados.");
 
   // Enlace P2P entre los switches del upper layer y los switches del Core
   NetDeviceContainer d2_3c1 = h_p2p.Install(n2_3c1);
   NetDeviceContainer d2_3c2 = h_p2p.Install(n2_3c2);
   NetDeviceContainer d2_4c3 = h_p2p.Install(n2_4c3);
   NetDeviceContainer d2_4c4 = h_p2p.Install(n2_4c4);
-  NS_LOG_DEBUG("[Escenario] Enlaces P2P entre los switches del upper layer y los switches del Core creados.");
+  NS_LOG_INFO("[Escenario] Enlaces P2P entre los switches del upper layer y los switches del Core creados.");
 
   // [DIRECCIONAMIENTO IP] Pod 2 
   h_ipv4.SetBase("10.2.0.0", MASCARA);
@@ -314,11 +313,11 @@ escenario ( DataRate tasaEnvioCsma  ,
   h_ipv4.SetBase("10.2.11.0", MASCARA);
   Ipv4InterfaceContainer i2_4c4 = h_ipv4.Assign(d2_4c4);
 
-  NS_LOG_DEBUG("[Escenario] Direcciones IPv4 asignadas a los equipos del pod 2.");
+  NS_LOG_INFO("[Escenario] Direcciones IPv4 asignadas a los equipos del pod 2.");
 
 
   // ************************************** POD 3 **************************************
-  NS_LOG_DEBUG("\n[Escenario] POD 3 ----------------------------------------------------------------------");
+  NS_LOG_INFO("\n[Escenario] POD 3 ----------------------------------------------------------------------");
   // [PILA DE PROTOCOLOS] Pod 3
   h_pila.Install(pc3_1);
   h_pila.Install(pc3_2);
@@ -328,7 +327,7 @@ escenario ( DataRate tasaEnvioCsma  ,
   h_pila.Install(sw3_2);
   h_pila.Install(sw3_3);
   h_pila.Install(sw3_4);
-  NS_LOG_DEBUG("[Escenario] Pila de los switches y equipos finales del pod 3 instanciada.");
+  NS_LOG_INFO("[Escenario] Pila de los switches y equipos finales del pod 3 instanciada.");
 
   // [ENLACES] Pod 3
   NodeContainer n3_1 = NodeContainer (pc3_1,sw3_1);
@@ -351,21 +350,21 @@ escenario ( DataRate tasaEnvioCsma  ,
   NetDeviceContainer d3_2 = h_csma.Install(n3_2);
   NetDeviceContainer d3_3 = h_csma.Install(n3_3);
   NetDeviceContainer d3_4 = h_csma.Install(n3_4);
-  NS_LOG_DEBUG("[Escenario] Enlaces CSMA entre los equipos finales y los switches del lower layer creados.");
+  NS_LOG_INFO("[Escenario] Enlaces CSMA entre los equipos finales y los switches del lower layer creados.");
 
   // Enlace P2P entre los switches del lower layer y los switches del upper layer
   NetDeviceContainer d3_13 = h_p2p.Install(n3_13);
   NetDeviceContainer d3_14 = h_p2p.Install(n3_14);
   NetDeviceContainer d3_23 = h_p2p.Install(n3_23);
   NetDeviceContainer d3_24 = h_p2p.Install(n3_24);
-  NS_LOG_DEBUG("[Escenario] Enlaces P2P entre los switches del lower layer y los switches del upper layer creados.");
+  NS_LOG_INFO("[Escenario] Enlaces P2P entre los switches del lower layer y los switches del upper layer creados.");
 
   // Enlace P2P entre los switches del upper layer y los switches del Core
   NetDeviceContainer d3_3c1 = h_p2p.Install(n3_3c1);
   NetDeviceContainer d3_3c2 = h_p2p.Install(n3_3c2);
   NetDeviceContainer d3_4c3 = h_p2p.Install(n3_4c3);
   NetDeviceContainer d3_4c4 = h_p2p.Install(n3_4c4);
-  NS_LOG_DEBUG("[Escenario] Enlaces P2P entre los switches del upper layer y los switches del Core creados.");
+  NS_LOG_INFO("[Escenario] Enlaces P2P entre los switches del upper layer y los switches del Core creados.");
 
   // [DIRECCIONAMIENTO IP] Pod 3 
   h_ipv4.SetBase("10.3.0.0", MASCARA);
@@ -404,11 +403,11 @@ escenario ( DataRate tasaEnvioCsma  ,
   h_ipv4.SetBase("10.3.11.0", MASCARA);
   Ipv4InterfaceContainer i3_4c4 = h_ipv4.Assign(d3_4c4);
 
-  NS_LOG_DEBUG("[Escenario] Direcciones IPv4 asignadas a los equipos del pod 3.");
+  NS_LOG_INFO("[Escenario] Direcciones IPv4 asignadas a los equipos del pod 3.");
 
 
   // ************************************** POD 4 **************************************
-  NS_LOG_DEBUG("\n[Escenario] POD 4 ----------------------------------------------------------------------");
+  NS_LOG_INFO("\n[Escenario] POD 4 ----------------------------------------------------------------------");
   // [PILA DE PROTOCOLOS] Pod 4
   h_pila.Install(pc4_1);
   h_pila.Install(pc4_2);
@@ -418,7 +417,7 @@ escenario ( DataRate tasaEnvioCsma  ,
   h_pila.Install(sw4_2);
   h_pila.Install(sw4_3);
   h_pila.Install(sw4_4);
-  NS_LOG_DEBUG("[Escenario] Pila de los switches y equipos finales del pod 4 instanciada.");
+  NS_LOG_INFO("[Escenario] Pila de los switches y equipos finales del pod 4 instanciada.");
 
   // [ENLACES] Pod 4
   NodeContainer n4_1 = NodeContainer (pc4_1,sw4_1);
@@ -441,21 +440,21 @@ escenario ( DataRate tasaEnvioCsma  ,
   NetDeviceContainer d4_2 = h_csma.Install(n4_2);
   NetDeviceContainer d4_3 = h_csma.Install(n4_3);
   NetDeviceContainer d4_4 = h_csma.Install(n4_4);
-  NS_LOG_DEBUG("[Escenario] Enlaces CSMA entre los equipos finales y los switches del lower layer creados.");
+  NS_LOG_INFO("[Escenario] Enlaces CSMA entre los equipos finales y los switches del lower layer creados.");
 
   // Enlace P2P entre los switches del lower layer y los switches del upper layer
   NetDeviceContainer d4_13 = h_p2p.Install(n4_13);
   NetDeviceContainer d4_14 = h_p2p.Install(n4_14);
   NetDeviceContainer d4_23 = h_p2p.Install(n4_23);
   NetDeviceContainer d4_24 = h_p2p.Install(n4_24);
-  NS_LOG_DEBUG("[Escenario] Enlaces P2P entre los switches del lower layer y los switches del upper layer creados.");
+  NS_LOG_INFO("[Escenario] Enlaces P2P entre los switches del lower layer y los switches del upper layer creados.");
 
   // Enlace P2P entre los switches del upper layer y los switches del Core
   NetDeviceContainer d4_3c1 = h_p2p.Install(n4_3c1);
   NetDeviceContainer d4_3c2 = h_p2p.Install(n4_3c2);
   NetDeviceContainer d4_4c3 = h_p2p.Install(n4_4c3);
   NetDeviceContainer d4_4c4 = h_p2p.Install(n4_4c4);
-  NS_LOG_DEBUG("[Escenario] Enlaces P2P entre los switches del upper layer y los switches del Core creados.");
+  NS_LOG_INFO("[Escenario] Enlaces P2P entre los switches del upper layer y los switches del Core creados.");
 
   // [DIRECCIONAMIENTO IP] Pod 4 
   h_ipv4.SetBase("10.4.0.0", MASCARA);
@@ -494,66 +493,194 @@ escenario ( DataRate tasaEnvioCsma  ,
   h_ipv4.SetBase("10.4.11.0", MASCARA);
   Ipv4InterfaceContainer i4_4c4 = h_ipv4.Assign(d4_4c4);
 
-  NS_LOG_DEBUG("[Escenario] Direcciones IPv4 asignadas a los equipos del pod 4.");
+  NS_LOG_INFO("[Escenario] Direcciones IPv4 asignadas a los equipos del pod 4.");
 
   /* comprobaciones_ip(pc1_1, pc1_2, pc1_3, pc1_4, pc2_1, pc2_2, pc2_3, pc2_4, pc3_1, pc3_2, pc3_3, pc3_4, pc4_1, pc4_2,
                     pc4_3, pc4_4, sw1_1, sw1_2, sw1_3, sw1_4, sw2_1, sw2_2, sw2_3, sw2_4, sw3_1, sw3_2, sw3_3, sw3_4,
                     sw4_1, sw4_2, sw4_3, sw4_4, swC1, swC3, swC2, swC4);
   */
 
+  // ************************************** POD 1 **************************************
   // [CLIENTE]
-  NodeContainer c_cliente;
-  c_cliente.Create(1);
+  NodeContainer c_cliente1;
+  c_cliente1.Create(1);
 
-  h_pila.Install(c_cliente);
-  NodeContainer n_cli_1 = NodeContainer (c_cliente,swC1);
+  h_pila.Install(c_cliente1);
+  NodeContainer n_cli_1 = NodeContainer (c_cliente1, swC1);
   NetDeviceContainer d_cli_1 = h_csma.Install(n_cli_1);
 
   h_ipv4.SetBase("78.30.23.0", MASCARA);
   Ipv4InterfaceContainer i_cli_1 = h_ipv4.Assign(d_cli_1);
 
-  NS_LOG_DEBUG("\n----------------------------------------------------------------------------");
-  NS_LOG_DEBUG("\n[Cliente] Cliente 1 conectado al switch 1 del core.");
+  NS_LOG_INFO("\n----------------------------------------------------------------------------");
+  NS_LOG_INFO("\n[Cliente_1] Cliente 1 conectado al switch 1 del core.");
 
   // [CLI-SRV]
-  Ptr<Node> n_servidor = pc1_1.Get(0);     // Fuente
-  Ptr<Node> n_cliente = c_cliente.Get(0);  // Sumidero
+  Ptr<Node> n_servidor1 = pc1_1.Get(0);     // Fuente
+  Ptr<Node> n_cliente1 = c_cliente1.Get(0);  // Sumidero
 
   // [CLIENTE] (sumidero)
-  Ptr<UdpServer> udp_client = CreateObject<UdpServer>();
-  n_cliente->AddApplication(udp_client);
+  Ptr<UdpServer> udp_cliente1 = CreateObject<UdpServer>();
+  n_cliente1->AddApplication(udp_cliente1);
   // Obtenemos ip y port del cliente para poder conectar al servidor con el mismo
-  Ipv4Address ip_client = n_cliente->GetObject<Ipv4>()->GetAddress(1,0).GetLocal();
-  UintegerValue  port_value;
-  udp_client->GetAttribute("Port", port_value);
-  uint16_t port_client = port_value.Get();
-  NS_LOG_INFO("[Cliente]   ID: "     << n_cliente->GetId() <<
-                        "  -- IP: "   << ip_client << 
-                        " -- Port: " << port_client);
+  Ipv4Address ip_cliente1 = n_cliente1->GetObject<Ipv4>()->GetAddress(1,0).GetLocal();
+  UintegerValue  port_value1;
+  udp_cliente1->GetAttribute("Port", port_value1);
+  uint16_t port_cliente1 = port_value1.Get();
+  NS_LOG_INFO("[Cliente_1]   ID: "     << n_cliente1->GetId() <<
+                        "  -- IP: "   << ip_cliente1 << 
+                        " -- Port: " << port_cliente1);
 
   // [SERVIDOR] (fuente)
-  Ptr<UdpEchoClient> udp_server = CreateObject<UdpEchoClient>();
-  udp_server -> SetAttribute ("Interval", TimeValue(intervaloEnvio));
-  udp_server -> SetAttribute ("PacketSize", UintegerValue(tamPaqFuente));
-  udp_server -> SetAttribute ("MaxPackets", UintegerValue(maxPq));
+  Ptr<UdpEchoClient> udp_servidor1 = CreateObject<UdpEchoClient>();
+  udp_servidor1 -> SetAttribute ("Interval", TimeValue(intervaloEnvio));
+  udp_servidor1 -> SetAttribute ("PacketSize", UintegerValue(tamPaqFuente));
+  udp_servidor1 -> SetAttribute ("MaxPackets", UintegerValue(maxPq));
 
-  n_servidor -> AddApplication(udp_server);
-  udp_server->SetRemote(ip_client, port_client);
-  NS_LOG_INFO("[Servidor]  ID: "   << n_servidor->GetId() <<
-                      "  -- IP: "   << n_servidor->GetObject<Ipv4>()->GetAddress(1,0).GetLocal());
+  n_servidor1 -> AddApplication(udp_servidor1);
+  udp_servidor1->SetRemote(ip_cliente1, port_cliente1);
+  NS_LOG_INFO("[Servidor_1]  ID: "   << n_servidor1->GetId() <<
+                      "  -- IP: "   << n_servidor1->GetObject<Ipv4>()->GetAddress(1,0).GetLocal());
+
+  // ************************************** POD 2 **************************************
+  // [CLIENTE]
+  NodeContainer c_cliente2;
+  c_cliente2.Create(1);
+
+  h_pila.Install(c_cliente2);
+  NodeContainer n_cli_2 = NodeContainer (c_cliente2, swC1);
+  NetDeviceContainer d_cli_2 = h_csma.Install(n_cli_2);
+
+  h_ipv4.SetBase("78.30.24.0", MASCARA);
+  Ipv4InterfaceContainer i_cli_2 = h_ipv4.Assign(d_cli_2);
+
+  NS_LOG_INFO("\n----------------------------------------------------------------------------");
+  NS_LOG_INFO("\n[Cliente_2] Cliente 2 conectado al switch 2 del core.");
+
+  // [CLI-SRV]
+  Ptr<Node> n_servidor2 = pc2_1.Get(0);     // Fuente
+  Ptr<Node> n_cliente2 = c_cliente2.Get(0);  // Sumidero
+
+  // [CLIENTE] (sumidero)
+  Ptr<UdpServer> udp_cliente2 = CreateObject<UdpServer>();
+  n_cliente2->AddApplication(udp_cliente2);
+  // Obtenemos ip y port del cliente para poder conectar al servidor con el mismo
+  Ipv4Address ip_cliente2 = n_cliente2->GetObject<Ipv4>()->GetAddress(1,0).GetLocal();
+  UintegerValue  port_value2;
+  udp_cliente2->GetAttribute("Port", port_value2);
+  uint16_t port_cliente2 = port_value2.Get();
+  NS_LOG_INFO("[Cliente_2]   ID: "     << n_cliente2->GetId() <<
+                        "  -- IP: "   << ip_cliente2 << 
+                        " -- Port: " << port_cliente2);
+
+  // [SERVIDOR] (fuente)
+  Ptr<UdpEchoClient> udp_servidor2 = CreateObject<UdpEchoClient>();
+  udp_servidor2 -> SetAttribute ("Interval", TimeValue(intervaloEnvio));
+  udp_servidor2 -> SetAttribute ("PacketSize", UintegerValue(tamPaqFuente));
+  udp_servidor2 -> SetAttribute ("MaxPackets", UintegerValue(maxPq));
+
+  n_servidor2 -> AddApplication(udp_servidor2);
+  udp_servidor2->SetRemote(ip_cliente2, port_cliente2);
+  NS_LOG_INFO("[Servidor_2]  ID: "   << n_servidor2->GetId() <<
+                      "  -- IP: "   << n_servidor2->GetObject<Ipv4>()->GetAddress(1,0).GetLocal());
+
+  // ************************************** POD 3 **************************************
+  // [CLIENTE]
+  NodeContainer c_cliente3;
+  c_cliente3.Create(1);
+
+  h_pila.Install(c_cliente3);
+  NodeContainer n_cli_3 = NodeContainer (c_cliente3, swC1);
+  NetDeviceContainer d_cli_3 = h_csma.Install(n_cli_3);
+
+  h_ipv4.SetBase("78.30.25.0", MASCARA);
+  Ipv4InterfaceContainer i_cli_3 = h_ipv4.Assign(d_cli_3);
+
+  NS_LOG_INFO("\n----------------------------------------------------------------------------");
+  NS_LOG_INFO("\n[Cliente_3] Cliente 3 conectado al switch 3 del core.");
+
+  // [CLI-SRV]
+  Ptr<Node> n_servidor3 = pc3_1.Get(0);     // Fuente
+  Ptr<Node> n_cliente3 = c_cliente3.Get(0);  // Sumidero
+
+  // [CLIENTE] (sumidero)
+  Ptr<UdpServer> udp_cliente3 = CreateObject<UdpServer>();
+  n_cliente3->AddApplication(udp_cliente3);
+  // Obtenemos ip y port del cliente para poder conectar al servidor con el mismo
+  Ipv4Address ip_cliente3 = n_cliente3->GetObject<Ipv4>()->GetAddress(1,0).GetLocal();
+  UintegerValue  port_value3;
+  udp_cliente3->GetAttribute("Port", port_value3);
+  uint16_t port_cliente3 = port_value3.Get();
+  NS_LOG_INFO("[Cliente_3]   ID: "     << n_cliente3->GetId() <<
+                        "  -- IP: "   << ip_cliente3 << 
+                        " -- Port: " << port_cliente3);
+
+  // [SERVIDOR] (fuente)
+  Ptr<UdpEchoClient> udp_servidor3 = CreateObject<UdpEchoClient>();
+  udp_servidor3 -> SetAttribute ("Interval", TimeValue(intervaloEnvio));
+  udp_servidor3 -> SetAttribute ("PacketSize", UintegerValue(tamPaqFuente));
+  udp_servidor3 -> SetAttribute ("MaxPackets", UintegerValue(maxPq));
+
+  n_servidor3 -> AddApplication(udp_servidor3);
+  udp_servidor3->SetRemote(ip_cliente3, port_cliente3);
+  NS_LOG_INFO("[Servidor_3]  ID: "   << n_servidor3->GetId() <<
+                      "  -- IP: "   << n_servidor3->GetObject<Ipv4>()->GetAddress(1,0).GetLocal());
+
+  // ************************************** POD 4 **************************************
+  // [CLIENTE]
+  NodeContainer c_cliente4;
+  c_cliente4.Create(1);
+
+  h_pila.Install(c_cliente4);
+  NodeContainer n_cli_4 = NodeContainer (c_cliente4, swC1);
+  NetDeviceContainer d_cli_4 = h_csma.Install(n_cli_4);
+
+  h_ipv4.SetBase("78.30.26.0", MASCARA);
+  Ipv4InterfaceContainer i_cli_4 = h_ipv4.Assign(d_cli_4);
+
+  NS_LOG_INFO("\n----------------------------------------------------------------------------");
+  NS_LOG_INFO("\n[Cliente_4] Cliente 4 conectado al switch 4 del core.");
+
+  // [CLI-SRV]
+  Ptr<Node> n_servidor4 = pc4_1.Get(0);     // Fuente
+  Ptr<Node> n_cliente4 = c_cliente4.Get(0);  // Sumidero
+
+  // [CLIENTE] (sumidero)
+  Ptr<UdpServer> udp_cliente4 = CreateObject<UdpServer>();
+  n_cliente4->AddApplication(udp_cliente4);
+  // Obtenemos ip y port del cliente para poder conectar al servidor con el mismo
+  Ipv4Address ip_cliente4 = n_cliente4->GetObject<Ipv4>()->GetAddress(1,0).GetLocal();
+  UintegerValue  port_value4;
+  udp_cliente4->GetAttribute("Port", port_value4);
+  uint16_t port_cliente4 = port_value4.Get();
+  NS_LOG_INFO("[Cliente_4]   ID: "     << n_cliente4->GetId() <<
+                        "  -- IP: "   << ip_cliente4 << 
+                        " -- Port: " << port_cliente4);
+
+  // [SERVIDOR] (fuente)
+  Ptr<UdpEchoClient> udp_servidor4 = CreateObject<UdpEchoClient>();
+  udp_servidor4 -> SetAttribute ("Interval", TimeValue(intervaloEnvio));
+  udp_servidor4 -> SetAttribute ("PacketSize", UintegerValue(tamPaqFuente));
+  udp_servidor4 -> SetAttribute ("MaxPackets", UintegerValue(maxPq));
+
+  n_servidor4 -> AddApplication(udp_servidor4);
+  udp_servidor4->SetRemote(ip_cliente4, port_cliente4);
+  NS_LOG_INFO("[Servidor_4]  ID: "   << n_servidor4->GetId() <<
+                      "  -- IP: "   << n_servidor4->GetObject<Ipv4>()->GetAddress(1,0).GetLocal());
 
   // [COLA-SERVIDOR] (fuente)
+  NS_LOG_INFO("\n----------------------------------------------------------------------------");
   // Obtenemos el puntero al TCL del nodo (OJO: puede ser nulo)
-  Ptr<TrafficControlLayer> tcl = n_servidor->GetObject<TrafficControlLayer> ();
+  Ptr<TrafficControlLayer> tcl = n_servidor1->GetObject<TrafficControlLayer> ();
 
   // Para cada dispositivo en el nodo 
-  for (uint32_t indice=0; indice<n_servidor->GetNDevices(); indice++)
+  for (uint32_t indice=0; indice<n_servidor1->GetNDevices(); indice++)
     {
       Ptr<Queue<Packet>> cola_tx;
       Ptr<QueueDisc> cola_tcl;
 
       // Obtenemos el puntero al dispositivo
-      Ptr<NetDevice> dispo = n_servidor->GetDevice(indice);
+      Ptr<NetDevice> dispo = n_servidor1->GetDevice(indice);
       NS_LOG_INFO ("[COLA-TX]  Tipo dispositivo " << indice << ": " << dispo->GetInstanceTypeId().GetName());
 
       // Sólo si el dispositivo es CsmaNetDevice buscamos la cola
@@ -596,31 +723,69 @@ escenario ( DataRate tasaEnvioCsma  ,
 
   // [TRAZAS PCAP]
   CsmaHelper h_csma_pcap;
-  h_csma_pcap.EnablePcap("fuente", n_servidor->GetDevice(1));
-  h_csma_pcap.EnablePcap("sumidero", n_cliente->GetDevice(1));
+  h_csma_pcap.EnablePcap("fuente1", n_servidor1->GetDevice(1));
+  h_csma_pcap.EnablePcap("sumidero1", n_cliente1->GetDevice(1));
+
+  h_csma_pcap.EnablePcap("fuente2", n_servidor2->GetDevice(1));
+  h_csma_pcap.EnablePcap("sumidero2", n_cliente2->GetDevice(1));
+
+  h_csma_pcap.EnablePcap("fuente3", n_servidor3->GetDevice(1));
+  h_csma_pcap.EnablePcap("sumidero3", n_cliente3->GetDevice(1));
+
+  h_csma_pcap.EnablePcap("fuente4", n_servidor4->GetDevice(1));
+  h_csma_pcap.EnablePcap("sumidero4", n_cliente4->GetDevice(1));
   
   // [TABLAS DE ENCAMINAMIENTO]
+  NS_LOG_INFO("\n----------------------------------------------------------------------------");
   Ipv4GlobalRoutingHelper::PopulateRoutingTables();
-  NS_LOG_DEBUG("[Escenario] Se crean las tablas de reenvío.");
+  NS_LOG_INFO("[Escenario] Se crean las tablas de reenvío.");
   //printRoutingTable(sw1_1.Get(0));
-  NS_LOG_DEBUG("\n----------------------------------------------------------------------------");
+  NS_LOG_INFO("\n----------------------------------------------------------------------------");
 
   // [OBSERVADORES]
-  ObservadorPaquetes observadorPq (n_servidor, udp_client);
+  ObservadorPaquetes observadorPq1 (n_servidor1, udp_cliente1);
+  ObservadorPaquetes observadorPq2 (n_servidor2, udp_cliente2);
+  ObservadorPaquetes observadorPq3 (n_servidor3, udp_cliente3);
+  ObservadorPaquetes observadorPq4 (n_servidor4, udp_cliente4);
+  
 
   // ----------------------------------------------
   // Simulator::Stop (Time("60s"));
   NS_LOG_INFO ("\n[SIMULACION] Inicio de la simulación en el instante: " << Simulator::Now().GetSeconds() << "s\n");
   Simulator::Run ();
   NS_LOG_INFO ("[SIMULACION] Fin de la simulación en el instante: " << Simulator::Now().GetSeconds() << "s\n");
-  
-  NS_LOG_LOGIC ("[RESULTADOS] Paquetes transmitidos: " << observadorPq.GetCuentaTx());
-  NS_LOG_LOGIC ("[RESULTADOS] Paquetes recibidos   : " << udp_client->GetReceived());
-  NS_LOG_LOGIC ("[RESULTADOS] Paquetes perdidos    : " << observadorPq.GetPerdidos());
-  NS_LOG_LOGIC ("[RESULTADOS] \% paquetes perdidos  : " << (observadorPq.GetPerdidos()*100)/observadorPq.GetCuentaTx() << "%" );
-  NS_LOG_LOGIC ("[RESULTADOS] Retardo medio        : " << observadorPq.RetardoMedio(). GetSeconds() << "s");
+  NS_LOG_INFO("\n----------------------------------------------------------------------------");
+  NS_LOG_LOGIC ("[RESULTADOS] Paquetes transmitidos: " << observadorPq1.GetCuentaTx());
+  NS_LOG_LOGIC ("[RESULTADOS] Paquetes recibidos   : " << udp_cliente1->GetReceived());
+  NS_LOG_LOGIC ("[RESULTADOS] Paquetes perdidos    : " << observadorPq1.GetPerdidos());
+  double pq_perdidos1 = (observadorPq1.GetPerdidos()*100)/observadorPq1.GetCuentaTx();
+  NS_LOG_LOGIC ("[RESULTADOS] \% paquetes perdidos  : " << pq_perdidos1 << "%" ); //<< std::setprecision(4)
+  NS_LOG_LOGIC ("[RESULTADOS] Retardo medio        : " << observadorPq1.RetardoMedio(). GetSeconds() << "s");
+  NS_LOG_INFO("\n----------------------------------------------------------------------------");
+  NS_LOG_LOGIC ("[RESULTADOS] Paquetes transmitidos: " << observadorPq2.GetCuentaTx());
+  NS_LOG_LOGIC ("[RESULTADOS] Paquetes recibidos   : " << udp_cliente2->GetReceived());
+  NS_LOG_LOGIC ("[RESULTADOS] Paquetes perdidos    : " << observadorPq2.GetPerdidos());
+  double pq_perdidos2 = (observadorPq2.GetPerdidos()*100)/observadorPq2.GetCuentaTx();
+  NS_LOG_LOGIC ("[RESULTADOS] \% paquetes perdidos  : " << pq_perdidos2 << "%" ); //<< std::setprecision(4)
+  NS_LOG_LOGIC ("[RESULTADOS] Retardo medio        : " << observadorPq2.RetardoMedio(). GetSeconds() << "s");
+  NS_LOG_INFO("\n----------------------------------------------------------------------------");
+  NS_LOG_LOGIC ("[RESULTADOS] Paquetes transmitidos: " << observadorPq3.GetCuentaTx());
+  NS_LOG_LOGIC ("[RESULTADOS] Paquetes recibidos   : " << udp_cliente3->GetReceived());
+  NS_LOG_LOGIC ("[RESULTADOS] Paquetes perdidos    : " << observadorPq3.GetPerdidos());
+  double pq_perdidos3 = (observadorPq3.GetPerdidos()*100)/observadorPq3.GetCuentaTx();
+  NS_LOG_LOGIC ("[RESULTADOS] \% paquetes perdidos  : " << pq_perdidos3 << "%" ); //<< std::setprecision(4)
+  NS_LOG_LOGIC ("[RESULTADOS] Retardo medio        : " << observadorPq3.RetardoMedio(). GetSeconds() << "s");
+  NS_LOG_INFO("\n----------------------------------------------------------------------------");  
+  NS_LOG_LOGIC ("[RESULTADOS] Paquetes transmitidos: " << observadorPq4.GetCuentaTx());
+  NS_LOG_LOGIC ("[RESULTADOS] Paquetes recibidos   : " << udp_cliente4->GetReceived());
+  NS_LOG_LOGIC ("[RESULTADOS] Paquetes perdidos    : " << observadorPq4.GetPerdidos());
+  double pq_perdidos4 = (observadorPq4.GetPerdidos()*100)/observadorPq4.GetCuentaTx();
+  NS_LOG_LOGIC ("[RESULTADOS] \% paquetes perdidos  : " << pq_perdidos4 << "%" ); //<< std::setprecision(4)
+  NS_LOG_LOGIC ("[RESULTADOS] Retardo medio        : " << observadorPq4.RetardoMedio(). GetSeconds() << "s");
 
-  return observadorPq;
+
+
+  return observadorPq1;
 }
 
 // ******************************
@@ -649,10 +814,10 @@ void printRoutingTable (Ptr<Node> node)
 int main (int argc, char *argv [])
 {
   // Variables por línea de comandos
-  DataRate tasaEnvioCsma ("20Mbps");
+  DataRate tasaEnvioCsma ("300Mbps");
   Time retardoCsma ("100ns");
   uint32_t mtuCsma (2000);
-  DataRate tasaEnvioP2P ("20Mbps");
+  DataRate tasaEnvioP2P ("10Gbps");
   Time retardoP2P ("10ns");
   DataRate tasaEnvioFuente ("20Mbps");
   uint32_t tamPaqFuente (1357);
