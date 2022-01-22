@@ -29,20 +29,9 @@
 #include "ns3/traffic-control-layer.h"
 #include "colaTxObservador.h"
 #include "colaTclObservador.h"
-
-
-//****
 #include "ns3/gnuplot.h"
 #include "punto.h"
-//#include "ns3/log.h"
 #include "ns3/average.h"
-//#include "ns3/data-rate.h"
-//#include "ns3/nstime.h"
-//#include "observadorPaquetes.h"
-//****
-
-// #include "extra.h"
-
 
 using namespace ns3;
 using std::vector;
@@ -53,15 +42,14 @@ using std::vector;
 
 
 // ****
-#define NUM_PUNTOS 8 //10
+#define NUM_PUNTOS 10
 #define NUM_CURVAS 1
-#define ITERACIONES 5 //15
+#define ITERACIONES 15
 // Para 30 muestras y un 95% de certidumbre (0.025 -- 30-1 --> 2.0452)
 // Para 5 muestras y un 95% de certidumbre (0.025 -- 5-1 --> 2.7765)
 // Para 15 muestras y un 95% de certidumbre (0.025 -- 15-1 --> 2.1448)
 
-#define TSTUDENT 2.7765 //2.1448
-
+#define TSTUDENT 2.1448
 // ****
 
 NS_LOG_COMPONENT_DEFINE ("Fat_tree");
@@ -681,15 +669,15 @@ void printRoutingTable (Ptr<Node> node)
 int main (int argc, char *argv [])
 {
   // Variables por línea de comandos
-  DataRate tasaEnvioCsma ("300Mbps");
-  Time retardoCsma ("100ns"); //no cambiar
+  DataRate tasaEnvioCsma ("10Mbps");  // Base 300Mbps
+  Time retardoCsma ("100ns");  
   uint32_t mtuCsma (2000);
   DataRate tasaEnvioP2P ("10Gbps");
-  Time retardoP2P ("10ns"); //no cambiar
-  DataRate tasaEnvioFuente ("20Mbps"); //no cambiar
-  uint32_t tamPaqFuente (1357); //no cambiar
-  Time intervaloEnvio (Time("100us")); //no cambiar
-  uint32_t maxPq (11579);
+  Time retardoP2P ("10ns");  
+  DataRate tasaEnvioFuente ("20Mbps");  
+  uint32_t tamPaqFuente (1357);  
+  Time intervaloEnvio (Time("100us"));  
+  uint32_t maxPq (57895);
 
 
   // Línea de comandos
@@ -709,7 +697,6 @@ int main (int argc, char *argv [])
 
   Time::SetResolution (Time::NS);  
 
-  //escenario (tasaEnvioCsma, retardoCsma, mtuCsma, tasaEnvioP2P, retardoP2P, tasaEnvioFuente, tamPaqFuente, intervaloEnvio, maxPq);
   // Creamos a gráfica
   Gnuplot dibujo =  grafica(tasaEnvioCsma, retardoCsma, mtuCsma, tasaEnvioP2P, retardoP2P, tasaEnvioFuente, tamPaqFuente, intervaloEnvio, maxPq); 
 
@@ -722,6 +709,10 @@ int main (int argc, char *argv [])
   return 0;
 }
 
+
+// ******************
+// ** Método Punto **
+// ******************
 Punto
 punto ( DataRate tasaEnvioCsma  ,
         Time     retardoCsma    ,
@@ -739,7 +730,7 @@ punto ( DataRate tasaEnvioCsma  ,
     // Simulación Z del punto j
     for (uint32_t iteracion = 0; iteracion<ITERACIONES; iteracion++){
         ObservadorPaquetes obs = escenario(tasaEnvioCsma, retardoCsma, mtuCsma, tasaEnvioP2P, retardoP2P, tasaEnvioFuente, tamPaqFuente, intervaloEnvio, maxPq);   
-        NS_LOG_DEBUG ("[GRAFICA] \tSIMULACIÓN " << iteracion+1 << " de " << ITERACIONES << " -- PQ_PERDIDOS = " << obs.GetPerdidos() << " -- \% PERDIDOS = " << (100*obs.GetPerdidos()/obs.GetCuentaTx()) );   
+        NS_LOG_DEBUG ("[GRAFICA] \tSIMULACIÓN " << iteracion+1 << " de " << ITERACIONES << " -- PQ_PERDIDOS = " << obs.GetPerdidos() << " -- \% PERDIDOS = " << (100*obs.GetPerdidos()/obs.GetCuentaTx()));   
         ac_perdidos.Update((100*obs.GetPerdidos()/obs.GetCuentaTx()));
     }
 
@@ -751,6 +742,9 @@ punto ( DataRate tasaEnvioCsma  ,
 }
 
 
+// ******************
+// ** Método Curva **
+// ******************
 Gnuplot2dDataset
 curva ( DataRate tasaEnvioCsma  ,
         Time     retardoCsma    ,
@@ -774,13 +768,15 @@ curva ( DataRate tasaEnvioCsma  ,
         curva.Add(pto.abscisa(), pto.ordenada(), pto.error());
         NS_LOG_DEBUG ("[GRAFICA] \t--> PUNTO " << numValores+1 << " de " << NUM_PUNTOS << " -- TASA = " << tasa_canal << " (Tasa,PqPerd,error) = (" << pto.abscisa() <<", " << pto.ordenada() <<", " << pto.error() << ")");
         NS_LOG_DEBUG ("[GRAFICA] \t------------------------------------------------------------------------------");
-        tasa_canal += 25e6;  // ************************************* ESTUDIARRRRRRRRR
+        tasa_canal += 15e6;
   }
-
   return curva;
 }
 
 
+// ********************
+// ** Método Grafica **
+// ********************
 Gnuplot
 grafica ( DataRate tasaEnvioCsma  ,
           Time     retardoCsma    ,
@@ -797,7 +793,7 @@ grafica ( DataRate tasaEnvioCsma  ,
   grafica.SetTitle (" % Paquetes perdidos frente a la tasa del canal");
   grafica.SetLegend ("Tasa del canal (Mbps)", "Paquetes perdidos (%)");
 
-  //Curva i (total 4)
+  //Curva i (total 1)
   for (uint32_t numCurvas=0; numCurvas<NUM_CURVAS; numCurvas++){
 
     NS_LOG_DEBUG ("[GRAFICA] ------------------------------------------------------------------------------");
@@ -805,7 +801,6 @@ grafica ( DataRate tasaEnvioCsma  ,
     Gnuplot2dDataset crv = curva(tasaEnvioCsma, retardoCsma, mtuCsma, tasaEnvioP2P, retardoP2P, tasaEnvioFuente, tamPaqFuente, intervaloEnvio, maxPq);
     // Añadimos la curva a la gráfica
     grafica.AddDataset(crv);
-    // parametro += numFuentesOnOff;
   } 
 
   return grafica;   

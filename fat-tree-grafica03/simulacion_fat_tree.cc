@@ -32,6 +32,8 @@
 #include "ns3/gnuplot.h"
 #include "punto.h"
 #include "ns3/average.h"
+#include "ns3/point-to-point-net-device.h"
+
 
 using namespace ns3;
 using std::vector;
@@ -618,6 +620,14 @@ escenario ( DataRate tasaEnvioCsma  ,
   h_csma_pcap.EnablePcap("fuente1", n_servidor1->GetDevice(1));
   h_csma_pcap.EnablePcap("sumidero1", n_cliente1->GetDevice(1));
   
+  // [CAIDA ENLACE]
+   // Caida enlace que une el sw1 con el sw3 del POD 1
+  uint32_t indice_if_sw1 = d1_13.Get(0)->GetObject<PointToPointNetDevice>()->GetIfIndex();
+  Ptr<Ipv4> ip_sw_1 = sw1_1.Get(0)->GetObject<Ipv4>();
+  Time instanteCaida("0.625s");
+  Simulator::Schedule (instanteCaida, &Ipv4::SetDown, ip_sw_1, indice_if_sw1);
+  NS_LOG_INFO("[Caida] Programamos la caida del enlace en el instante: " << instanteCaida );
+
   // [TABLAS DE ENCAMINAMIENTO]
   NS_LOG_INFO("\n----------------------------------------------------------------------------");
   Ipv4GlobalRoutingHelper::PopulateRoutingTables();
@@ -701,7 +711,7 @@ int main (int argc, char *argv [])
   Gnuplot dibujo =  grafica(tasaEnvioCsma, retardoCsma, mtuCsma, tasaEnvioP2P, retardoP2P, tasaEnvioFuente, tamPaqFuente, intervaloEnvio, maxPq); 
 
   // Generamos los ficheros con la gráfica
-  std::ofstream fichero ("grafica02.plt");
+  std::ofstream fichero ("grafica03.plt");
   dibujo.GenerateOutput(fichero);
   fichero << "pause -1" << std::endl;
   fichero.close ();
